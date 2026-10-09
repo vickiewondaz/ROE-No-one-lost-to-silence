@@ -1,6 +1,6 @@
-// TRD §19 — RLS migration. Apply with psql / drizzle-kit migrate.
-// Service-role key never reaches the browser. App sets app.org_id +
-// app.user_id per transaction from the server session (never client input).
+-- TRD §19 — RLS migration. Apply with psql / drizzle-kit migrate.
+-- Service-role key never reaches the browser. App sets app.org_id +
+-- app.user_id per transaction from the server session (never client input).
 
 -- Enable RLS on all tenant tables
 ALTER TABLE organisations ENABLE ROW LEVEL SECURITY;
