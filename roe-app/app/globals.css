@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+/* ROE tokens — PRD v1.1 / UI v1.1.1 / Figma v1.2.1
+   Refs: Attio (record hierarchy), SaaSUI (home/empty states),
+   Luma (group detail), Mobbin (flows), Dribbble (card polish) */
+@theme {
+  --color-teal-deep: #0f766e;
+  --color-teal-dark: #115e59;
+  --color-teal-light: #ccfbf1;
+  --color-amber-warm: #d97706;
+  --color-amber-light: #fef3c7;
+  --color-orange-human: #ea580c;
+  --color-orange-light: #ffedd5;
+  --color-blue-info: #2563eb;
+  --color-blue-light: #dbeafe;
+  --color-ivory: #f8faf9;
+  --color-surface: #ffffff;
+  --color-ink: #17201f;
+  --color-slate2: #667370;
+  --color-border: #e2e8e6;
+  --color-success: #15803d;
+  --color-success-bg: #dcfce7;
+  --color-error: #dc2626;
+  --color-error-bg: #fee2e2;
+
+  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono2: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-ivory);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+.font-mono2 {
+  font-family: var(--font-mono2);
+}
+
+/* Calm attention — no anxiety colours for people */
+.tap-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
