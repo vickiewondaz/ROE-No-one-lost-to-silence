@@ -42,27 +42,6 @@ export default function Landing() {
         </p>
       </div>
 
-      <div className="mt-8 flex flex-col gap-3">
-        {[
-          ["Every newcomer gets an owner", "Capture → assign, within a day."],
-          ["Every follow-up has a next action", "Record what happened, know what's next."],
-          ["Nobody disappears into silence", "Attention lists, honest outcomes, real connections."],
-        ].map(([title, sub]) => (
-          <div
-            key={title}
-            className="flex gap-3 rounded-xl border border-[#E2E8E6] bg-white p-4"
-          >
-            <span aria-hidden className="mt-0.5 text-[#0F766E]">
-              ●
-            </span>
-            <div>
-              <p className="font-display text-[15px] font-semibold">{title}</p>
-              <p className="text-[13px] text-[#667370]">{sub}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
       <p className="font-mono2 mt-auto pt-8 text-center text-[11px] text-[#667370]">
         Capture → Assign → Follow Up → Connect → Know What Happens Next
       </p>
