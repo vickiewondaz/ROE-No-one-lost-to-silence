@@ -258,5 +258,70 @@ let yaGroupId = "", connId = "", conn2Id = "", testGroupId = "";
   const good = await req("POST", "/api/auth/sign-in/email", { email, password: "NewSmokePass456!" }, false);
   check("new password works → 200", good.status === 200, `got=${good.status}`);
 }
+import { execFileSync } from "node:child_process";
+
+// Platform round-trip (local DB owner via grant script)
+{
+  const m0 = await req("GET", "/api/platform/me");
+  check("non-super platform/me → false", m0.status === 200 && m0.j?.data?.isSuperAdmin === false, `got=${m0.status}`);
+  const g0 = await req("GET", "/api/platform/orgs");
+  check("non-super orgs → 403", g0.status === 403, `got=${g0.status}`);
+  execFileSync("node", ["scripts/grant-superadmin.mjs", email], { stdio: "ignore" });
+  const m1 = await req("GET", "/api/platform/me");
+  check("granted platform/me → true", m1.status === 200 && m1.j?.data?.isSuperAdmin === true, `got=${m1.status}`);
+}
+let newOrgId = "";
+{
+  const slug = `smoke-church-${Date.now()}`;
+  const r = await req("POST", "/api/platform/orgs", { name: "Smoke Church", slug });
+  check("org create → 201", r.status === 201 && !!r.j?.data?.id, `got=${r.status}`);
+  newOrgId = r.j?.data?.id ?? "";
+}
+let orgAdminToken = "";
+const orgEmail = `orgadmin-${Date.now()}@grace-pilot.test`;
+{
+  const r = await req("POST", `/api/platform/orgs/${newOrgId}/admins`, { email: orgEmail });
+  check("first-admin invite → 201", r.status === 201 && !!r.j?.data?.token, `got=${r.status}`);
+  orgAdminToken = r.j?.data?.token ?? "";
+}
+{
+  const r = await req("POST", `/api/invites/${orgAdminToken}`, { name: "Org Admin", password }, false);
+  check("accept admin invite → 201 admin", r.status === 201 && r.j?.data?.role === "admin", `got=${r.status}`);
+}
+let orgCookie = "";
+{
+  cookie = "";
+  await sleep(2000);
+  const si = await req("POST", "/api/auth/sign-in/email", { email: orgEmail, password }, false);
+  check("org admin sign-in → 200", si.status === 200, `got=${si.status}`);
+  orgCookie = cookie;
+  const me = await req("GET", "/api/me");
+  check("org admin me → own org", me.status === 200 && me.j?.data?.orgId === newOrgId, `got=${me.status}`);
+}
+{
+  // Suspend gate: org API dies for members, platform untouched, then restore.
+  cookie = "";
+  await sleep(2000);
+  await req("POST", "/api/auth/sign-in/email", { email, password: "NewSmokePass456!" }, false);
+  const s = await req("POST", `/api/platform/orgs/${newOrgId}/suspend`, { suspended: true });
+  check("suspend → 200", s.status === 200, `got=${s.status}`);
+  cookie = orgCookie;
+  const blocked = await req("GET", "/api/me");
+  check("suspended org me → 403", blocked.status === 403, `got=${blocked.status}`);
+  // Fresh invite on suspended org (super can still administer) → accept blocked.
+  cookie = "";
+  await sleep(2000);
+  await req("POST", "/api/auth/sign-in/email", { email, password: "NewSmokePass456!" }, false);
+  const inv4 = await req("POST", `/api/platform/orgs/${newOrgId}/admins`, { email: `late-${Date.now()}@t.co` });
+  const lateToken = inv4.j?.data?.token ?? "";
+  check("invite on suspended org → 201 (administering still works)", inv4.status === 201, `got=${inv4.status}`);
+  const late = await req("POST", `/api/invites/${lateToken}`, { name: "Late", password }, false);
+  check("accept into suspended org → 403", late.status === 403, `got=${late.status}`);
+  const re = await req("POST", `/api/platform/orgs/${newOrgId}/suspend`, { suspended: false });
+  check("reactivate → 200", re.status === 200, `got=${re.status}`);
+  cookie = orgCookie;
+  const back = await req("GET", "/api/me");
+  check("reactivated org me → 200", back.status === 200, `got=${back.status}`);
+}
 console.log(`smoke: pass=${pass} fail=${fail} admin=${adminId ? "created" : "MISSING"}`);
 process.exit(fail ? 1 : 0);

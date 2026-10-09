@@ -40,6 +40,19 @@ export const organisations = pgTable("organisations", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
+  status: text("status").notNull().default("active"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Platform super-admins (govern orgs + org-admins, never member data).
+// Separate table so org logic can never confuse the two tiers.
+export const platformAdmins = pgTable("platform_admins", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" })
+    .unique(),
+  grantedBy: uuid("granted_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

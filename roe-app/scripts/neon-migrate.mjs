@@ -57,6 +57,7 @@ await runFile("drizzle/0000_worried_the_enforcers.sql");
 await runFile("drizzle/0001_init.sql");
 await runFile("drizzle/0002_auth.sql");
 await runFile("drizzle/0003_invites.sql");
+await runFile("drizzle/0004_platform.sql");
 await runFile("drizzle/seed.sql");
 
 // 2. Least-privilege role for negative tests (no password; reached via SET ROLE)

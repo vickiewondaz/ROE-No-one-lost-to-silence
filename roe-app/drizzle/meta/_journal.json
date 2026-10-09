@@ -29,6 +29,20 @@
       "when": 1791567000000,
       "tag": "0003_invites",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791574645563,
+      "tag": "0003_free_freak",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": 7,
+      "when": 1791568000000,
+      "tag": "0004_platform",
+      "breakpoints": true
     }
   ]
 }

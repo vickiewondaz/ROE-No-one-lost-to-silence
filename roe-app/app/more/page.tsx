@@ -27,6 +27,7 @@ const FRAMES: [string, string][] = [
 
 export default function More() {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuper, setIsSuper] = useState(false);
   useEffect(() => {
     fetch("/api/me", { credentials: "same-origin" })
       .then((r) => (r.ok ? r.json() : null))
@@ -34,9 +35,24 @@ export default function More() {
         if (j?.data && ["admin", "senior"].includes(j.data.role)) setIsAdmin(true);
       })
       .catch(() => {});
+    fetch("/api/platform/me", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (j?.data?.isSuperAdmin) setIsSuper(true);
+      })
+      .catch(() => {});
   }, []);
   return (
     <Shell title="More" tab="more">
+      {isSuper && (
+        <Link
+          href="/platform"
+          className="mb-3 block rounded-xl bg-[#17201F] p-4 text-white"
+        >
+          <p className="font-display font-semibold">Platform →</p>
+          <p className="font-mono2 text-[12px] text-[#A7B3B0]">organisations, not people</p>
+        </Link>
+      )}
       {isAdmin && (
         <Link
           href="/admin"

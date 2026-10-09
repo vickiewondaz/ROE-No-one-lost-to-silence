@@ -53,6 +53,13 @@ export async function POST(
   if (!inv) return NextResponse.json({ error: "Invite not found." }, { status: 404 });
   if (inv.state !== "valid")
     return NextResponse.json({ error: "Invite no longer valid." }, { status: 410 });
+  const orgLive = await db
+    .select()
+    .from(organisations)
+    .where(eq(organisations.id, inv.orgId))
+    .limit(1);
+  if (!orgLive[0] || orgLive[0].status !== "active")
+    return NextResponse.json({ error: "This organisation is suspended." }, { status: 403 });
   let userId: string;
   try {
     const created = (await auth.api.signUpEmail({
