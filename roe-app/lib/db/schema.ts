@@ -229,6 +229,18 @@ export const auditLogs = pgTable("audit_logs", {
   at: timestamp("at").defaultNow().notNull(),
 });
 
+// Which users lead which groups (Group Leader scope). Checked in requireSession
+// (ledGroupIds) and enforced in person/action scopes. Admin-managed.
+export const groupLeads = pgTable("group_leads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orgId: uuid("org_id").notNull(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  groupId: uuid("group_id")
+    .notNull()
+    .references(() => groups.id, { onDelete: "cascade" }),
+});
 // Team invitations (F01.09–F01.12). Token stored hashed, single-use, 7d expiry.
 // Invite-only pilot: roles worker|group_leader|member|care (never admin).
 export const invitations = pgTable("invitations", {

@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 import { createHash, randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/lib/db/client";
 import { auditLogs, invitations } from "@/lib/db/schema";
@@ -87,6 +87,39 @@ export async function GET() {
       expiresAt: r.expiresAt,
     })),
   });
+}
+
+// DELETE /api/invites?id= — admin revokes a PENDING invite (accepted = history).
+export async function DELETE(req: Request) {
+  if (!process.env.DATABASE_URL)
+    return NextResponse.json({ error: "db_not_configured" }, { status: 501 });
+  const s = await requireSession();
+  if ("error" in s) return NextResponse.json({ error: s.message }, { status: s.error });
+  const { ctx } = s;
+  if (ctx.role !== "admin")
+    return NextResponse.json({ error: "Not permitted." }, { status: 403 });
+  const id = new URL(req.url).searchParams.get("id") ?? "";
+  const db = getDb();
+  const out = await db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT set_config('app.org_id', ${ctx.orgId}, true)`);
+    const rows = await tx
+      .select()
+      .from(invitations)
+      .where(and(eq(invitations.id, id), eq(invitations.orgId, ctx.orgId)))
+      .limit(1);
+    const inv = rows[0];
+    if (!inv) return null;
+    if (inv.acceptedAt) return "used" as const;
+    await tx.delete(invitations).where(eq(invitations.id, id));
+    await tx.insert(auditLogs).values({
+      orgId: ctx.orgId, actor: ctx.userId, op: "invites:revoke", ref: id, allowed: true,
+    });
+    return "ok" as const;
+  });
+  if (out === null) return NextResponse.json({ error: "Not found." }, { status: 404 });
+  if (out === "used")
+    return NextResponse.json({ error: "Accepted invitations are history and stay." }, { status: 422 });
+  return NextResponse.json({ data: { revoked: true } });
 }
 
 export async function lookupInvite(db: ReturnType<typeof getDb>, token: string) {  const rows = await db

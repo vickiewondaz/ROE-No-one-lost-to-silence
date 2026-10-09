@@ -8,6 +8,7 @@ import { z } from "zod";
 import { dbUuid } from "@/lib/validate";
 import { getDb } from "@/lib/db/client";
 import { actions, auditLogs, interactions, people } from "@/lib/db/schema";
+import { personInScope } from "@/lib/connections";
 import { requireSession } from "@/lib/session";
 
 const bodySchema = z.object({
@@ -44,18 +45,22 @@ export async function POST(req: Request) {
       .where(and(eq(people.id, v.personId), eq(people.orgId, ctx.orgId)))
       .limit(1);
     if (!person[0]) return null;
-    // Person authorisation: assigned via any action, admin/senior, or own row.
-    const mine = await tx
-      .select({ a: actions.id })
-      .from(actions)
-      .where(and(eq(actions.personId, v.personId), eq(actions.assignee, ctx.userId)))
-      .limit(1);
-    const own = ctx.role === "member" && person[0].userId === ctx.userId;
-    if (!["admin", "senior"].includes(ctx.role) && mine.length === 0 && !own) {
+    // Person authorisation via the shared gate (assigned, group-led,
+    // admin, own). Members cannot record for others.
+    if (ctx.role === "member" && person[0].userId !== ctx.userId) {
       await tx.insert(auditLogs).values({
         orgId: ctx.orgId, actor: ctx.userId, op: "interactions:create", ref: v.personId, allowed: false,
       });
       return "denied" as const;
+    }
+    if (ctx.role !== "member") {
+      const scope = await personInScope(tx, ctx, v.personId);
+      if (scope !== "ok") {
+        await tx.insert(auditLogs).values({
+          orgId: ctx.orgId, actor: ctx.userId, op: "interactions:create", ref: v.personId, allowed: false,
+        });
+        return scope === "missing" ? null : ("denied" as const);
+      }
     }
     let action = null;
     if (v.actionId) {

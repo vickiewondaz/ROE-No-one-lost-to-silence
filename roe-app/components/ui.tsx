@@ -17,7 +17,20 @@ export function Shell({
   tab?: "home" | "people" | "actions" | "more";
 }) {
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-[480px] flex-col bg-[#F8FAF9]">
+    <div className="mx-auto flex min-h-full w-full max-w-[480px] flex-col bg-[#F8FAF9] lg:max-w-5xl lg:flex-row">
+      {/* Desktop rail (lg+): sidebar navigation, same destinations as bottom nav */}
+      <aside className="hidden w-60 shrink-0 flex-col gap-1 border-r border-[#E2E8E6] bg-white p-4 lg:flex">
+        <p className="font-mono2 px-2 text-[11px] uppercase tracking-widest text-[#667370]">
+          ROE · No one lost to silence
+        </p>
+        <div className="mt-3 flex flex-col gap-1">
+          <RailLink href="/home" label="Home" icon="⌂" active={tab === "home"} />
+          <RailLink href="/people" label="People" icon="◍" active={tab === "people"} />
+          <RailLink href="/actions" label="Actions" icon="✓" active={tab === "actions"} />
+          <RailLink href="/more" label="More" icon="···" active={tab === "more"} />
+        </div>
+      </aside>
+      <div className="flex min-h-full w-full max-w-[480px] flex-col lg:max-w-2xl">
       <header className="sticky top-0 z-10 border-b border-[#E2E8E6] bg-white/95 px-4 pb-3 pt-4 backdrop-blur">
         <div className="flex items-center gap-3">
           {back && (
@@ -39,8 +52,8 @@ export function Shell({
           </div>
         </div>
       </header>
-      <main className="flex-1 px-4 pb-28 pt-4">{children}</main>
-      <nav className="fixed bottom-0 left-1/2 w-full max-w-[480px] -translate-x-1/2 border-t border-[#E2E8E6] bg-white px-2 pb-[max(env(safe-area-inset-bottom),8px)] pt-2">
+      <main className="flex-1 px-4 pb-28 pt-4 lg:pb-10">{children}</main>
+      <nav className="fixed bottom-0 left-1/2 w-full max-w-[480px] -translate-x-1/2 border-t border-[#E2E8E6] bg-white px-2 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 lg:hidden">
         <div className="grid grid-cols-4 gap-1">
           <Tab href="/home" label="Home" icon="⌂" active={tab === "home"} />
           <Tab href="/people" label="People" icon="◍" active={tab === "people"} />
@@ -53,7 +66,34 @@ export function Shell({
           <Tab href="/more" label="More" icon="···" active={tab === "more"} />
         </div>
       </nav>
+      </div>
     </div>
+  );
+}
+
+function RailLink({
+  href,
+  label,
+  icon,
+  active,
+}: {
+  href: string;
+  label: string;
+  icon: string;
+  active?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium ${
+        active ? "bg-[#CCFBF1] text-[#115E59]" : "text-[#667370] hover:bg-[#F8FAF9]"
+      }`}
+    >
+      <span aria-hidden className="w-5 text-center">
+        {icon}
+      </span>
+      {label}
+    </Link>
   );
 }
 

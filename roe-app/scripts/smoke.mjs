@@ -171,9 +171,14 @@ let inviteToken = "";
   const r = await req("POST", `/api/invites/${inviteToken}`, { name: "Again", password }, false);
   check("reuse invite → 410", r.status === 410, `got=${r.status}`);
 }
+let worker2Email = "";
+let ADMIN_COOKIE = "";
+let WORKER_COOKIE = "";
+let ORG_COOKIE = "";
 // Second user (worker): assignee-only enforcement
 {
   const email2 = `smoke2-${Date.now()}@grace-pilot.test`;
+  worker2Email = email2;
   await sleep(2000);
   const s2 = await req("POST", "/api/setup", { secret, email: email2, password, name: "Smoke Two", role: "worker" }, false);
   check("second setup → 201", s2.status === 201, `got=${s2.status}`);
@@ -182,6 +187,7 @@ let inviteToken = "";
   await sleep(2000);
   const si = await req("POST", "/api/auth/sign-in/email", { email: email2, password }, false);
   check("second sign-in → 200", si.status === 200, `got=${si.status}`);
+  WORKER_COOKIE = cookie;
   const t = await req("POST", `/api/actions/${action2Id}/transition`, { to: "Paused", reason: "x" });
   check("non-assignee non-admin transition → 403", t.status === 403, `got=${t.status}`);
   const gl = await req("GET", "/api/groups");
@@ -257,6 +263,7 @@ let yaGroupId = "", connId = "", conn2Id = "", testGroupId = "";
   await sleep(2000);
   const good = await req("POST", "/api/auth/sign-in/email", { email, password: "NewSmokePass456!" }, false);
   check("new password works → 200", good.status === 200, `got=${good.status}`);
+  ADMIN_COOKIE = cookie;
 }
 import { execFileSync } from "node:child_process";
 
@@ -300,18 +307,14 @@ let orgCookie = "";
 }
 {
   // Suspend gate: org API dies for members, platform untouched, then restore.
-  cookie = "";
-  await sleep(2000);
-  await req("POST", "/api/auth/sign-in/email", { email, password: "NewSmokePass456!" }, false);
+  cookie = ADMIN_COOKIE;
   const s = await req("POST", `/api/platform/orgs/${newOrgId}/suspend`, { suspended: true });
   check("suspend → 200", s.status === 200, `got=${s.status}`);
   cookie = orgCookie;
   const blocked = await req("GET", "/api/me");
   check("suspended org me → 403", blocked.status === 403, `got=${blocked.status}`);
   // Fresh invite on suspended org (super can still administer) → accept blocked.
-  cookie = "";
-  await sleep(2000);
-  await req("POST", "/api/auth/sign-in/email", { email, password: "NewSmokePass456!" }, false);
+  cookie = ADMIN_COOKIE;
   const inv4 = await req("POST", `/api/platform/orgs/${newOrgId}/admins`, { email: `late-${Date.now()}@t.co` });
   const lateToken = inv4.j?.data?.token ?? "";
   check("invite on suspended org → 201 (administering still works)", inv4.status === 201, `got=${inv4.status}`);
@@ -322,6 +325,87 @@ let orgCookie = "";
   cookie = orgCookie;
   const back = await req("GET", "/api/me");
   check("reactivated org me → 200", back.status === 200, `got=${back.status}`);
+}
+// ---- Depth: roles, leads, resend, audit, notifications, group scope ----
+{
+  cookie = ADMIN_COOKIE;
+  const me0 = await req("GET", "/api/me");
+  check("admin re-auth → 200", me0.status === 200, `got=${me0.status}`);
+}
+let worker2Id = "";
+{
+  const u = await req("GET", "/api/users");
+  const target = (u.j?.data ?? []).find((m) => m.email === worker2Email);
+  worker2Id = target?.id ?? "";
+  const r = await req("PATCH", `/api/users/${target?.membershipId}`, { role: "group_leader" });
+  check("role change → 200", r.status === 200 && r.j?.data?.role === "group_leader", `got=${r.status}`);
+}
+{
+  const me = await req("GET", "/api/me");
+  const all = await req("GET", "/api/users");
+  const self = (all.j?.data ?? []).find((m) => m.id === me.j?.data?.userId);
+  const r = await req("PATCH", `/api/users/${self?.membershipId}`, { role: "worker" });
+  check("self-edit → 403", r.status === 403, `got=${r.status}`);
+}
+{
+  const a = await req("POST", `/api/groups/${testGroupId}/leads`, { userId: worker2Id });
+  check("lead assign → 201", a.status === 201, `got=${a.status}`);
+  const d = await req("POST", `/api/groups/${testGroupId}/leads`, { userId: worker2Id });
+  check("lead dup → 422", d.status === 422, `got=${d.status}`);
+}
+{
+  // Group-leader scope proof: worker2 leads Test Choir; newId joins it here
+  // via confirm — with no action assigned to worker2 (assigned-path excluded).
+  const s = await req("POST", "/api/connections", { personId: newId, groupId: testGroupId });
+  check("scope-suggest → 201", s.status === 201, `got=${s.status}`);
+  const cid = s.j?.data?.id ?? "";
+  const si2 = await req("POST", `/api/connections/${cid}/introduce`);
+  check("scope-introduce → 200", si2.status === 200, `got=${si2.status}`);
+  const so = await req("POST", `/api/connections/${cid}/outcome`, { result: "attended" });
+  check("scope-outcome → 200", so.status === 200, `got=${so.status}`);
+  const sc = await req("POST", `/api/connections/${cid}/confirm`);
+  check("scope-confirm → 200", sc.status === 200, `got=${sc.status}`);
+  cookie = WORKER_COOKIE;
+  const seen = await req("GET", `/api/people/${newId}`);
+  check("leader sees group member → 200", seen.status === 200, `got=${seen.status}`);
+  cookie = ADMIN_COOKIE;
+  const rm = await req("DELETE", `/api/groups/${testGroupId}/leads`, { userId: worker2Id });
+  check("lead remove → 200", rm.status === 200, `got=${rm.status}`);
+}
+{
+  const inv = await req("POST", "/api/invites", { email: `revoke-${Date.now()}@t.co`, role: "member" });
+  const iid = inv.j?.data?.id ?? "";
+  const del = await req("DELETE", `/api/invites?id=${iid}`);
+  check("invite revoke → 200", del.status === 200, `got=${del.status}`);
+  const lst = await req("GET", "/api/invites");
+  check("revoked invite gone from list", lst.status === 200 && !(lst.j?.data ?? []).some((i) => i.id === iid), `got=${lst.status}`);
+}
+{
+  const a = await req("GET", "/api/audit");
+  check("audit list has entries", a.status === 200 && (a.j?.data ?? []).length > 5, `got=${a.status}`);
+}
+{
+  const n0 = await req("GET", "/api/notifications");
+  const unread0 = (n0.j?.data ?? []).filter((n) => !n.read).length;
+  await req("PATCH", "/api/notifications", { readAll: true });
+  const n1 = await req("GET", "/api/notifications");
+  check("notifications mark-read", unread0 > 0 && (n1.j?.data ?? []).every((n) => n.read), `unread=${unread0}`);
+}
+{
+  const all = await req("GET", "/api/users");
+  const w = (all.j?.data ?? []).find((m) => m.email === worker2Email);
+  const d = await req("PATCH", `/api/users/${w?.membershipId}`, { status: "suspended" });
+  check("deactivate → 200", d.status === 200, `got=${d.status}`);
+  cookie = WORKER_COOKIE;
+  const blocked = await req("GET", "/api/me");
+  check("suspended member me → 403", blocked.status === 403, `got=${blocked.status}`);
+  cookie = ADMIN_COOKIE;
+  const r2 = await req("PATCH", `/api/users/${w?.membershipId}`, { status: "active" });
+  check("reactivate → 200", r2.status === 200, `got=${r2.status}`);
+  cookie = WORKER_COOKIE;
+  const back = await req("GET", "/api/me");
+  check("reactivated me → 200 leader", back.status === 200 && back.j?.data?.role === "group_leader", `got=${back.status}`);
+  cookie = ADMIN_COOKIE;
 }
 console.log(`smoke: pass=${pass} fail=${fail} admin=${adminId ? "created" : "MISSING"}`);
 process.exit(fail ? 1 : 0);

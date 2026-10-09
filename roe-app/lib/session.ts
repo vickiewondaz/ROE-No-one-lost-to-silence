@@ -1,9 +1,9 @@
 // Session → org/role resolution (server only). Single-org pilot: first active membership wins.
 import { headers } from "next/headers";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { auth } from "./auth";
 import { getDb } from "./db/client";
-import { memberships, actions, organisations, platformAdmins } from "./db/schema";
+import { groupLeads, memberships, actions, organisations, platformAdmins } from "./db/schema";
 import type { AuthCtx, Role } from "./authz";
 
 export async function requireSession(): Promise<
@@ -24,11 +24,11 @@ export async function requireSession(): Promise<
     .select()
     .from(memberships)
     .where(eq(memberships.userId, userId));
-  const m = rows.find((r) => r.status === "active") ?? rows[0];
+  const m = rows.find((r) => r.status === "active");
   if (!m)
     return {
       error: 403,
-      message: "No organisation — ask your administrator to invite you.",
+      message: "No active organisation — ask your administrator to invite you.",
     };
   const org = await db
     .select()
@@ -45,12 +45,18 @@ export async function requireSession(): Promise<
     .from(actions)
     .where(eq(actions.assignee, userId))
     .catch(() => [] as { personId: string }[]);
+  const led = await db
+    .select({ groupId: groupLeads.groupId })
+    .from(groupLeads)
+    .where(and(eq(groupLeads.userId, userId), eq(groupLeads.orgId, m.orgId)))
+    .catch(() => [] as { groupId: string }[]);
   return {
     ctx: {
       userId,
       orgId: m.orgId,
       role: m.role as Role,
       assignedPersonIds: assigned.map((a) => a.personId),
+      ledGroupIds: led.map((l) => l.groupId),
     },
   };
 }

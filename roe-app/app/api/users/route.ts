@@ -33,7 +33,15 @@ export async function GET() {
     const out = [];
     for (const m of ms) {
       const u = await tx.select().from(users).where(eq(users.id, m.userId)).limit(1);
-      if (u[0]) out.push({ id: u[0].id, name: u[0].name ?? "Team member", role: m.role });
+      if (u[0])
+        out.push({
+          id: u[0].id,
+          membershipId: m.id,
+          name: u[0].name ?? "Team member",
+          email: u[0].email,
+          role: m.role,
+          status: m.status,
+        });
     }
     return out;
   });

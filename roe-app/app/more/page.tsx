@@ -28,6 +28,7 @@ const FRAMES: [string, string][] = [
 export default function More() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuper, setIsSuper] = useState(false);
+  const [notes, setNotes] = useState<{ id: string; type: string; refId: string | null; read: boolean }[]>([]);
   useEffect(() => {
     fetch("/api/me", { credentials: "same-origin" })
       .then((r) => (r.ok ? r.json() : null))
@@ -41,7 +42,27 @@ export default function More() {
         if (j?.data?.isSuperAdmin) setIsSuper(true);
       })
       .catch(() => {});
+    fetch("/api/notifications", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (Array.isArray(j?.data)) setNotes(j.data);
+      })
+      .catch(() => {});
   }, []);
+
+  async function markRead() {
+    try {
+      const r = await fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ readAll: true }),
+      });
+      if (r.ok) setNotes((ns) => ns.map((n) => ({ ...n, read: true })));
+    } catch {}
+  }
+
+  const unread = notes.filter((n) => !n.read);
   return (
     <Shell title="More" tab="more">
       {isSuper && (
@@ -75,6 +96,38 @@ export default function More() {
       >
         Change password →
       </Link>
+      <h2 className="font-display mt-4 text-[16px] font-semibold">
+        Notifications{unread.length > 0 ? ` · ${unread.length} new` : ""}
+      </h2>
+      <div className="mt-2 flex flex-col gap-1.5">
+        {notes.slice(0, 10).map((n) => (
+          <Link
+            key={n.id}
+            href={n.refId ? `/actions/${n.refId}` : "/actions"}
+          >
+            <Card>
+              <p className={`text-[14px] ${n.read ? "text-[#667370]" : "font-medium"}`}>
+                {n.type === "assignment" ? "New assignment for you" : n.type}
+                {!n.read && " ●"}
+              </p>
+            </Card>
+          </Link>
+        ))}
+        {notes.length === 0 && (
+          <Card>
+            <p className="text-[14px] text-[#667370]">Nothing yet. Assignments and updates land here.</p>
+          </Card>
+        )}
+      </div>
+      {unread.length > 0 && (
+        <button
+          type="button"
+          onClick={markRead}
+          className="tap-target mt-2 w-full rounded-lg border border-[#E2E8E6] bg-white text-[14px] font-medium"
+        >
+          Mark all read
+        </button>
+      )}
       <h2 className="font-display mt-4 text-[16px] font-semibold">
         Prototype index — all 20 frames
       </h2>

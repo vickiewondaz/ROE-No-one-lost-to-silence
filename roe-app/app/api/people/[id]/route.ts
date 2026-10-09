@@ -6,6 +6,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { getDb } from "@/lib/db/client";
 import { actions, auditLogs, people } from "@/lib/db/schema";
 import { personDTO } from "@/lib/people";
+import { personInScope } from "@/lib/connections";
 import { requireSession } from "@/lib/session";
 
 export async function GET(
@@ -30,24 +31,10 @@ export async function GET(
       .limit(1);
     const row = rows[0];
     if (!row) return null;
-    const assigned = (
-      await tx
-        .select({ a: actions.id })
-        .from(actions)
-        .where(and(eq(actions.personId, id), eq(actions.assignee, ctx.userId)))
-        .limit(1)
-    ).length > 0;
-    const allowed =
-      ["admin", "senior"].includes(ctx.role) ||
-      assigned ||
-      (ctx.role === "member" && row.userId === ctx.userId);
-    if (!allowed) {
+    const scope = await personInScope(tx, ctx, id);
+    if (scope !== "ok") {
       await tx.insert(auditLogs).values({
-        orgId: ctx.orgId,
-        actor: ctx.userId,
-        op: "people:read",
-        ref: id,
-        allowed: false,
+        orgId: ctx.orgId, actor: ctx.userId, op: "people:read", ref: id, allowed: false,
       });
       return "denied" as const;
     }

@@ -43,6 +43,20 @@
       "when": 1791568000000,
       "tag": "0004_platform",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791575872505,
+      "tag": "0004_dry_aqueduct",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": 7,
+      "when": 1791569000000,
+      "tag": "0005_group_leads",
+      "breakpoints": true
     }
   ]
 }

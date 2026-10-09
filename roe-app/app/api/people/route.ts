@@ -8,6 +8,7 @@ import { z } from "zod";
 import { getDb } from "@/lib/db/client";
 import { actions, auditLogs, consents, people } from "@/lib/db/schema";
 import { personDTO } from "@/lib/people";
+import { personInScope } from "@/lib/connections";
 import { requireSession } from "@/lib/session";
 import { can } from "@/lib/authz";
 
@@ -42,19 +43,13 @@ export async function GET() {
       .where(eq(people.orgId, ctx.orgId))
       .orderBy(asc(people.firstName))
       .limit(500);
-    // Default scope: assigned + truly-new (no actions yet). Admin/senior see
-    // all; member sees own row only (people.user_id). PRD App. B.
-    if (ctx.role === "member") {
-      list = list.filter((p) => p.userId === ctx.userId);
-    } else if (!["admin", "senior"].includes(ctx.role)) {
-      const mine = new Set(ctx.assignedPersonIds ?? []);
-      const touched = new Set(
-        (await tx.select({ personId: actions.personId }).from(actions)).map(
-          (a) => a.personId
-        )
-      );
-      list = list.filter((p) => mine.has(p.id) || !touched.has(p.id));
+    // Single shared scope gate (assigned, group-led, admin, own). One check
+    // per person; pilot scale makes the N+1 acceptable (indexed lookups).
+    const visible = [];
+    for (const p of list) {
+      if ((await personInScope(tx, ctx, p.id)) === "ok") visible.push(p);
     }
+    list = visible;
     return Promise.all(list.map((p) => personDTO(tx, p)));
   });
   return NextResponse.json({ data: rows });
