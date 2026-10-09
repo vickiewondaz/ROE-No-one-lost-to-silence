@@ -215,3 +215,17 @@ export const auditLogs = pgTable("audit_logs", {
   allowed: boolean("allowed").notNull(),
   at: timestamp("at").defaultNow().notNull(),
 });
+
+// Team invitations (F01.09–F01.12). Token stored hashed, single-use, 7d expiry.
+// Invite-only pilot: roles worker|group_leader|member|care (never admin).
+export const invitations = pgTable("invitations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orgId: uuid("org_id").notNull(),
+  email: text("email").notNull(),
+  role: roleEnum("role").notNull(),
+  tokenHash: text("token_hash").notNull().unique(),
+  invitedBy: uuid("invited_by"),
+  expiresAt: timestamp("expires_at").notNull(),
+  acceptedAt: timestamp("accepted_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

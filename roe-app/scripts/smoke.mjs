@@ -148,6 +148,29 @@ let actionId = "", action2Id = "";
   const r = await req("GET", "/api/notifications");
   check("assignment notification present", r.status === 200 && (r.j?.data ?? []).some((n) => n.type === "assignment"), `got=${r.status}`);
 }
+// Invite round-trip (admin cookie active)
+let inviteToken = "";
+{
+  const r = await req("POST", "/api/invites", { email: `invited-${Date.now()}@grace-pilot.test`, role: "worker" });
+  check("invite create → 201 + token", r.status === 201 && !!r.j?.data?.token, `got=${r.status}`);
+  inviteToken = r.j?.data?.token ?? "";
+}
+{
+  const r = await req("GET", "/api/invites");
+  check("invite list contains pending", r.status === 200 && (r.j?.data ?? []).some((i) => i.status === "pending"), `got=${r.status}`);
+}
+{
+  const r = await req("GET", "/api/invites/does-not-exist", null, false);
+  check("bogus invite → 404", r.status === 404, `got=${r.status}`);
+}
+{
+  const r = await req("POST", `/api/invites/${inviteToken}`, { name: "Invited Worker", password }, false);
+  check("accept invite → 201 worker", r.status === 201 && r.j?.data?.role === "worker", `got=${r.status}`);
+}
+{
+  const r = await req("POST", `/api/invites/${inviteToken}`, { name: "Again", password }, false);
+  check("reuse invite → 410", r.status === 410, `got=${r.status}`);
+}
 // Second user (worker): assignee-only enforcement
 {
   const email2 = `smoke2-${Date.now()}@grace-pilot.test`;

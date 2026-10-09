@@ -1,5 +1,7 @@
 // MORE tab + prototype index (all 20 frames for review).
+"use client";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Shell, Card } from "@/components/ui";
 
 const FRAMES: [string, string][] = [
@@ -24,8 +26,26 @@ const FRAMES: [string, string][] = [
 ];
 
 export default function More() {
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    fetch("/api/me", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (j?.data && ["admin", "senior"].includes(j.data.role)) setIsAdmin(true);
+      })
+      .catch(() => {});
+  }, []);
   return (
     <Shell title="More" tab="more">
+      {isAdmin && (
+        <Link
+          href="/admin"
+          className="mb-3 block rounded-xl border border-[#0F766E]/40 bg-[#CCFBF1]/40 p-4"
+        >
+          <p className="font-display font-semibold text-[#115E59]">Administration →</p>
+          <p className="text-[13px] text-[#667370]">Team, invitations, organisation</p>
+        </Link>
+      )}
       <Card>
         <p className="font-display font-semibold">Connections · Care (P1) · Insights (P2)</p>
         <p className="text-[13px] text-[#667370]">

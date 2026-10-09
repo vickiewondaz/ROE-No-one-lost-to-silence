@@ -15,6 +15,20 @@
       "when": 1791512315118,
       "tag": "0002_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791567028865,
+      "tag": "0002_zippy_bulldozer",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": 7,
+      "when": 1791567000000,
+      "tag": "0003_invites",
+      "breakpoints": true
     }
   ]
 }
