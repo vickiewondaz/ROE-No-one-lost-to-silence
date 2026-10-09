@@ -1,8 +1,39 @@
-// P01 / F01.01 Sign In — Mobbin login + validation pattern.
-import Link from "next/link";
+"use client";
+// P01 / F01.01 Sign In — Mobbin login + validation pattern, live Better Auth.
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
 import { PrimaryButton, Field, inputCls } from "@/components/ui";
 
 export default function Login() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setBusy(true);
+    try {
+      const res = await authClient.signIn.email({ email, password });
+      if (res.error) {
+        setError(
+          res.error.status === 401
+            ? "Wrong email or password. Try again."
+            : "Couldn't sign you in. Check connection and try again."
+        );
+        return;
+      }
+      router.push("/home");
+    } catch {
+      setError("Couldn't reach the server. Demo unavailable offline.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="mx-auto flex min-h-full w-full max-w-[480px] flex-col justify-center bg-[#F8FAF9] px-6">
       <p className="font-mono2 text-[11px] uppercase tracking-widest text-[#667370]">
@@ -14,7 +45,7 @@ export default function Login() {
       <p className="mt-1 text-[14px] text-[#667370]">
         Capture → Assign → Follow Up → Connect → Know What Happens Next
       </p>
-      <form className="mt-6 flex flex-col gap-4" action="/home">
+      <form className="mt-6 flex flex-col gap-4" onSubmit={submit}>
         <Field label="Email">
           <input
             className={inputCls}
@@ -22,27 +53,29 @@ export default function Login() {
             required
             placeholder="you@church.org"
             autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </Field>
-        <Field label="Password">
+        <Field
+          label="Password"
+          error={error}
+        >
           <input
             className={inputCls}
             type="password"
             required
             placeholder="••••••••"
             autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
         </Field>
-        <PrimaryButton type="submit">Sign in</PrimaryButton>
-        <Link
-          href="/home"
-          className="text-center text-[14px] font-medium text-[#0F766E]"
-        >
-          Forgot password?
-        </Link>
-        <p className="rounded-lg bg-[#DBEAFE] p-3 text-[13px] text-[#1E3A8A]">
-          Demo build: any email signs in. Real auth (Better Auth + org select)
-          lands in Week 1 backend gate.
+        <PrimaryButton type="submit">
+          {busy ? "Signing in…" : "Sign in"}
+        </PrimaryButton>
+        <p className="text-center text-[13px] text-[#667370]">
+          Pilot access is invite-only. Ask your administrator for an account.
         </p>
       </form>
     </div>

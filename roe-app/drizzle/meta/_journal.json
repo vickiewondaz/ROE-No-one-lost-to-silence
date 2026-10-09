@@ -8,6 +8,13 @@
       "when": 1791510621446,
       "tag": "0000_worried_the_enforcers",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791512315118,
+      "tag": "0002_auth",
+      "breakpoints": true
     }
   ]
 }

@@ -1,14 +1,13 @@
 // P03 / F03.01 People — Attio directory + SaaS Interface search/filter.
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Shell, Card, StatusPill, inputCls } from "@/components/ui";
-import { loadPeople, type Person } from "@/lib/data";
+import { usePeople } from "@/lib/use-people";
 
 export default function PeoplePage() {
   const [q, setQ] = useState("");
-  const [people, setPeople] = useState<Person[]>([]);
-  useEffect(() => setPeople(loadPeople()), []);
+  const { people, demo, forbidden } = usePeople();
 
   const list = people.filter((p) =>
     `${p.firstName} ${p.lastName}`.toLowerCase().includes(q.toLowerCase())
@@ -16,6 +15,16 @@ export default function PeoplePage() {
 
   return (
     <Shell title="People" tab="people">
+      {demo && (
+        <p className="mb-2 rounded-lg bg-[#DBEAFE] p-2 text-[12px] text-[#1E3A8A]">
+          Demo data — sign in with a pilot account for live data.
+        </p>
+      )}
+      {forbidden && (
+        <p className="mb-2 rounded-lg bg-[#FEE2E2] p-2 text-[12px] text-[#991B1B]">
+          No organisation — ask your administrator to invite you.
+        </p>
+      )}
       <div className="flex gap-2">
         <input
           className={inputCls}

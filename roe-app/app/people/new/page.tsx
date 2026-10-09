@@ -13,12 +13,40 @@ export default function NewPerson() {
   const [channel, setChannel] = useState("WhatsApp");
   const [error, setError] = useState("");
 
-  function save(e: React.FormEvent) {
+  async function save(e: React.FormEvent) {
     e.preventDefault();
     const digits = phone.replace(/\D/g, "");
     if (first.trim().length < 2) return setError("Enter a first name.");
     if (digits.length < 7 || digits.length > 15)
       return setError("Enter a valid phone. Check digits and try again.");
+    // Live first (session cookie); fall back to local demo store offline/501.
+    try {
+      const r = await fetch("/api/people", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          firstName: first.trim(),
+          phone: phone.trim(),
+          channel,
+          consentContact: true,
+        }),
+      });
+      const j = await r.json().catch(() => null);
+      if (r.ok && j?.data?.id) {
+        if (j.data.duplicateWarning)
+          sessionStorage.setItem("roe.createdNote", j.data.duplicateWarning);
+        else sessionStorage.removeItem("roe.createdNote");
+        router.push(`/people/${j.data.id}/created`);
+        return;
+      }
+      if (r.status === 422 && j?.error) {
+        setError(j.error);
+        return;
+      }
+    } catch {
+      // fall through to local demo save
+    }
     const people = loadPeople();
     const dup = people.find((p) =>
       p.phone.replace(/\D/g, "").endsWith(digits.slice(-7))

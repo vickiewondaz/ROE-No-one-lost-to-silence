@@ -1,40 +1,130 @@
-// GET /api/people — scoped read. Deny-by-default; no client org_id trusted.
+// /api/people — GET scoped list, POST create (PRD §17 validation).
+// Org always comes from the session. Client org_id is never trusted.
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
+import { asc, eq, sql } from "drizzle-orm";
+import { z } from "zod";
+import { getDb } from "@/lib/db/client";
+import { actions, auditLogs, consents, people } from "@/lib/db/schema";
+import { personDTO } from "@/lib/people";
+import { requireSession } from "@/lib/session";
 import { can } from "@/lib/authz";
 
+const createSchema = z.object({
+  firstName: z.string().trim().min(2).max(60),
+  lastName: z.string().trim().max(60).optional().default(""),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^[+0-9][0-9 ()-]{6,18}$/, "Enter a valid phone."),
+  channel: z.enum(["Call", "WhatsApp", "Visit", "Other"]),
+  interests: z.string().trim().max(280).optional().default(""),
+  consentContact: z.literal(true, {
+    message: "Contact consent is required.",
+  }),
+});
+
 export async function GET() {
-  // Pilot gate: wire session (Better Auth) here. Until DATABASE_URL is set,
-  // the UI uses localStorage demo data and this route reports unconfigured.
-  if (!process.env.DATABASE_URL) {
-    return NextResponse.json(
-      {
-        error: "db_not_configured",
-        message: "Set DATABASE_URL then redeploy. UI demo data active.",
-        // Authz shape enforced once session exists:
-        authz: "people:read requires same-org + assigned|group|grant; cross-org → 403",
-      },
-      { status: 501 }
-    );
-  }
-  // Real path (post-config):
-  // const session = await getSession(); if (!session) 401
-  // if (!can(session, "people:read", { orgId: session.orgId, ... })) 403 + audit
-  // ...scoped Drizzle query with RLS context...
-  return NextResponse.json({ data: [] });
+  if (!process.env.DATABASE_URL)
+    return NextResponse.json({ error: "db_not_configured" }, { status: 501 });
+  const s = await requireSession();
+  if ("error" in s) return NextResponse.json({ error: s.message }, { status: s.error });
+  const { ctx } = s;
+  const db = getDb();
+  const rows = await db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT set_config('app.org_id', ${ctx.orgId}, true)`);
+    await tx.execute(sql`SELECT set_config('app.role', ${ctx.role}, true)`);
+    await tx.execute(sql`SELECT set_config('app.user_id', ${ctx.userId}, true)`);
+    let list = await tx
+      .select()
+      .from(people)
+      .where(eq(people.orgId, ctx.orgId))
+      .orderBy(asc(people.firstName))
+      .limit(500);
+    // Default scope: assigned + truly-new (no actions yet). Admin/senior see
+    // all; member sees own row only (people.user_id). PRD App. B.
+    if (ctx.role === "member") {
+      list = list.filter((p) => p.userId === ctx.userId);
+    } else if (!["admin", "senior"].includes(ctx.role)) {
+      const mine = new Set(ctx.assignedPersonIds ?? []);
+      const touched = new Set(
+        (await tx.select({ personId: actions.personId }).from(actions)).map(
+          (a) => a.personId
+        )
+      );
+      list = list.filter((p) => mine.has(p.id) || !touched.has(p.id));
+    }
+    return Promise.all(list.map((p) => personDTO(tx, p)));
+  });
+  return NextResponse.json({ data: rows });
 }
 
-export async function POST() {
-  if (!process.env.DATABASE_URL) {
-    return NextResponse.json(
-      {
-        error: "db_not_configured",
-        message: "POST /api/people needs DATABASE_URL + session.",
-      },
-      { status: 501 }
-    );
+export async function POST(req: Request) {
+  if (!process.env.DATABASE_URL)
+    return NextResponse.json({ error: "db_not_configured" }, { status: 501 });
+  const s = await requireSession();
+  if ("error" in s) return NextResponse.json({ error: s.message }, { status: s.error });
+  const { ctx } = s;
+  if (!can(ctx, "people:create", { orgId: ctx.orgId })) {
+    await getDb().insert(auditLogs).values({
+      orgId: ctx.orgId,
+      actor: ctx.userId,
+      op: "people:create",
+      allowed: false,
+    });
+    return NextResponse.json({ error: "Not permitted." }, { status: 403 });
   }
-  void can;
-  return NextResponse.json({ data: null });
+  const parsed = createSchema.safeParse(await req.json().catch(() => null));
+  if (!parsed.success)
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Invalid input." },
+      { status: 422 }
+    );
+  const v = parsed.data;
+  const db = getDb();
+  const dto = await db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT set_config('app.org_id', ${ctx.orgId}, true)`);
+    await tx.execute(sql`SELECT set_config('app.role', ${ctx.role}, true)`);
+    await tx.execute(sql`SELECT set_config('app.user_id', ${ctx.userId}, true)`);
+    const digits = v.phone.replace(/\D/g, "");
+    const dup = await tx
+      .select({ id: people.id, firstName: people.firstName, phone: people.phone })
+      .from(people)
+      .where(eq(people.orgId, ctx.orgId))
+      .limit(200);
+    const possibleDup = dup.find((d) =>
+      d.phone.replace(/\D/g, "").endsWith(digits.slice(-7))
+    );
+    const [row] = await tx
+      .insert(people)
+      .values({
+        orgId: ctx.orgId,
+        firstName: v.firstName,
+        lastName: v.lastName,
+        phone: v.phone,
+        channel: v.channel,
+        interests: v.interests || null,
+      })
+      .returning();
+    await tx.insert(consents).values({
+      orgId: ctx.orgId,
+      personId: row.id,
+      type: "contact",
+      granted: true,
+      byUser: ctx.userId,
+    });
+    await tx.insert(auditLogs).values({
+      orgId: ctx.orgId,
+      actor: ctx.userId,
+      op: "people:create",
+      ref: row.id,
+      allowed: true,
+    });
+    const full = await personDTO(tx, row);
+    return { ...full, duplicateWarning: possibleDup
+      ? `Possible duplicate: ${possibleDup.firstName} (${possibleDup.phone}).`
+      : undefined };
+  });
+  return NextResponse.json({ data: dto }, { status: 201 });
 }

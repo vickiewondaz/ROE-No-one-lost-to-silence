@@ -10,13 +10,14 @@ Stack: Next.js 16 + Postgres + Better Auth + Drizzle + RLS. Source: TRD v1.1 §�
 ## 1. Provision production data (10 min)
 - [ ] Create managed Postgres (Vercel Postgres / Neon / Supabase — pick ONE, same region as Vercel project)
 - [ ] Save: pooled connection string (app) + direct connection string (migrations). Service-role key stays server-only, never `NEXT_PUBLIC_`
-- [ ] Run migrations in order on prod: `drizzle/0000_worried_the_enforcers.sql` (14 tables from `lib/db/schema.ts`), then `drizzle/0001_init.sql` (RLS), then `drizzle/seed.sql` (pilot org + admin + worker + Young Adults). Verify: `\d people` shows `org_id`, RLS enabled (`SELECT relname, relrowsecurity FROM pg_class WHERE relname='people'` → true)
+- [ ] Run migrations in order on prod: `drizzle/0000_worried_the_enforcers.sql` (14 tables), `drizzle/0001_init.sql` (RLS), `drizzle/0002_auth.sql` (Better Auth tables + `people.user_id`), `drizzle/seed.sql` (pilot org + placeholder users + Young Adults). Or re-run idempotent `node scripts/neon-migrate.mjs` (includes A/B/C negatives). Verify RLS on.
 - [ ] Backups on (daily, retain 7d). Record RPO 24h / RTO 4h in pilot runbook
 
 ## 2. Vercel project (10 min)
 - [ ] `vercel` CLI logged in OR Import GitHub repo `vickiewondaz/ROE-No-one-lost-to-silence`, Root Directory = `roe-app`
 - [ ] Framework preset: Next.js. Build command: `npm run build`. Node 20+
-- [ ] Env vars (Production + Preview): `DATABASE_URL` (pooled), `BETTER_AUTH_SECRET` (new random, NOT the local one), `BETTER_AUTH_URL` + `NEXT_PUBLIC_APP_URL` (= deployed URL)
+- [ ] Env vars (Production + Preview): `DATABASE_URL` (pooled), `DATABASE_URL_UNPOOLED` (direct, migrations), `NEON_BRANCH`, `BETTER_AUTH_SECRET` (new random, NOT the local one), `BETTER_AUTH_URL` + `NEXT_PUBLIC_APP_URL` (= deployed URL), `ALLOW_SETUP=true` + `SETUP_SECRET` (random; set `ALLOW_SETUP=false` after first admin exists)
+- [ ] Bootstrap first admin: `POST /api/setup {secret,email,password,name}` → 201, sign in at `/login`, confirm live data. Verify with `node scripts/smoke.mjs <prod-url>` (11 checks).
 - [ ] No secrets in repo. Confirm `git log --all -p | grep BETTER_AUTH_SECRET` empty
 
 ## 3. Deploy + migrate check (5 min)

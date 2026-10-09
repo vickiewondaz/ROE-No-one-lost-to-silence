@@ -4,13 +4,15 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Shell, Card, AttentionPill, StatusPill } from "@/components/ui";
-import { loadPeople, loadActions, type Person } from "@/lib/data";
+import { loadActions, type Person } from "@/lib/data";
+import { usePeople } from "@/lib/use-people";
 
 export default function HomePage() {
-  const [people, setPeople] = useState<Person[]>([]);
+  const { people, demo, forbidden } = usePeople();
+  const [, setTick] = useState(0);
   useEffect(() => {
-    setPeople(loadPeople());
     loadActions();
+    setTick((t) => t + 1);
   }, []);
 
   const dueToday = loadActionsSafe().filter((a) => !a.overdue);
@@ -19,6 +21,16 @@ export default function HomePage() {
 
   return (
     <Shell title="Good morning, David" tab="home">
+      {demo && (
+        <p className="mb-3 rounded-lg bg-[#DBEAFE] p-2 text-[12px] text-[#1E3A8A]">
+          Demo data — sign in with a pilot account for live data.
+        </p>
+      )}
+      {forbidden && (
+        <p className="mb-3 rounded-lg bg-[#FEE2E2] p-2 text-[12px] text-[#991B1B]">
+          No organisation — ask your administrator to invite you.
+        </p>
+      )}
       <section>
         <h2 className="font-display text-[16px] font-semibold">
           Needs attention
