@@ -108,8 +108,12 @@ export default function Platform() {
           </Link>
         ))}
       </div>
-      <h2 className="font-display mt-4 text-[16px] font-semibold">New organisation</h2>
-      <div className="mt-2 flex flex-col gap-3">
+      <div className="mt-3 flex flex-col gap-2">
+        <Link href="/platform/ai-test" className="tap-target rounded-lg border border-[#E2E8E6] bg-white py-3 text-center text-[14px] font-medium">
+          AI test console →
+        </Link>
+      </div>
+      <h2 className="font-display mt-4 text-[16px] font-semibold">New organisation</h2>      <div className="mt-2 flex flex-col gap-3">
         <Field label="Church / fellowship name">
           <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Riverside Chapel" />
         </Field>
