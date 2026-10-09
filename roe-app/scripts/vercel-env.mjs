@@ -11,7 +11,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const local = {};
 for (const line of readFileSync(join(root, ".env.local"), "utf8").split("\n")) {
   const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
-  if (m) local[m[1]] = m[2].trim();
+  if (m) local[m[1]] = m[2].trim().replace(/^"|"$/g, "");
 }
 const freshSetup = randomBytes(32).toString("hex");
 const freshAuth = randomBytes(32).toString("hex");

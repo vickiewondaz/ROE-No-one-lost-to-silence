@@ -9,9 +9,9 @@ const base = process.argv[2] ?? "http://localhost:3104";
 const env = {};
 for (const line of readFileSync(join(root, ".env.local"), "utf8").split("\n")) {
   const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
-  if (m) env[m[1]] = m[2].trim();
+  if (m) env[m[1]] = m[2].trim().replace(/^"|"$/g, '');
 }
-const secret = env.SETUP_SECRET;
+const secret = process.argv[3] ?? env.SETUP_SECRET;
 if (!secret) throw new Error("SETUP_SECRET missing");
 const email = `smoke-${Date.now()}@grace-pilot.test`;
 const password = "SmokePass123!";
