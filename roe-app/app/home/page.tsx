@@ -10,14 +10,29 @@ import { usePeople } from "@/lib/use-people";
 export default function HomePage() {
   const { people, demo, forbidden } = usePeople();
   const [, setTick] = useState(0);
+  const [remoteCounts, setRemoteCounts] = useState<{ due: number; overdue: number } | null>(null);
   useEffect(() => {
     loadActions();
     setTick((t) => t + 1);
+    fetch("/api/actions?tab=all", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (Array.isArray(j?.data)) {
+          const list = j.data as { bucket: string }[];
+          setRemoteCounts({
+            due: list.filter((a) => a.bucket === "today").length,
+            overdue: list.filter((a) => a.bucket === "overdue").length,
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const dueToday = loadActionsSafe().filter((a) => !a.overdue);
   const overdue = loadActionsSafe().filter((a) => a.overdue);
   const fresh = people.filter((p) => p.journey === "New" || p.journey === "Assigned");
+  const dueCount = remoteCounts ? remoteCounts.due : dueToday.length;
+  const overdueCount = remoteCounts ? remoteCounts.overdue : overdue.length;
 
   return (
     <Shell title="Good morning, David" tab="home">
@@ -55,7 +70,7 @@ export default function HomePage() {
           ))}
           <Card>
             <p className="font-display font-semibold">
-              {dueToday.length} follow-ups due today
+              {dueCount} follow-ups due today{overdueCount > 0 ? ` · ${overdueCount} overdue` : ""}
             </p>
             <p className="text-[13px] text-[#667370]">
               New people needing follow-up · Pending connections

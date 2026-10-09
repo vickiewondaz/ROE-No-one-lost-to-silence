@@ -1,6 +1,6 @@
 "use client";
-// P18 / F05.10 Next Action — never manufacture a task.
-import { use, useState } from "react";
+// P18 / F05.10 Next Action — live POST when signed in, local fallback.
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shell, Card, Field, PrimaryButton, inputCls } from "@/components/ui";
 import { loadPeople, savePeople, loadActions, saveActions } from "@/lib/data";
@@ -15,8 +15,18 @@ export default function Next({
   const [title, setTitle] = useState("Check in next week");
   const [due, setDue] = useState("In 7 days");
   const [none, setNone] = useState(false);
+  const [myId, setMyId] = useState<string | null>(null);
 
-  function save() {
+  useEffect(() => {
+    fetch("/api/me", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (j?.data?.userId) setMyId(j.data.userId as string);
+      })
+      .catch(() => {});
+  }, []);
+
+  function localSave() {
     if (!none) {
       saveActions([
         { id: `a${Date.now()}`, personId: id, title, status: "Open", due: due.replace("In ", "") },
@@ -29,6 +39,33 @@ export default function Next({
       )
     );
     router.push(`/people/${id}`);
+  }
+
+  async function save() {
+    if (!none && myId) {
+      try {
+        const d = new Date();
+        if (due === "Tomorrow") d.setDate(d.getDate() + 1);
+        else if (due === "In 3 days") d.setDate(d.getDate() + 3);
+        else d.setDate(d.getDate() + 7);
+        const r = await fetch("/api/actions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            personId: id,
+            type: title,
+            assigneeUserId: myId,
+            dueAt: d.toISOString().slice(0, 10),
+          }),
+        });
+        if (r.ok) {
+          router.push(`/people/${id}`);
+          return;
+        }
+      } catch {}
+    }
+    localSave();
   }
 
   return (
@@ -59,8 +96,7 @@ export default function Next({
         )}
         <Card>
           <p className="text-[13px] text-[#667370]">
-            Every important relationship shows a next step — or an explicit
-            rest. Updated profile + Home reflect this immediately (P19/P20).
+            Every important relationship shows a next step — or an explicit rest.
           </p>
         </Card>
         <PrimaryButton onClick={save}>Save and finish → profile</PrimaryButton>

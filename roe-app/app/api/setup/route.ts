@@ -16,6 +16,7 @@ const bodySchema = z.object({
   password: z.string().min(8).max(128),
   name: z.string().trim().min(2).max(60),
   orgSlug: z.string().trim().min(2).max(60).default("grace-pilot"),
+  role: z.enum(["admin", "worker", "group_leader"]).default("admin"),
 });
 
 export async function POST(req: Request) {
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success || parsed.data.secret !== process.env.SETUP_SECRET)
     return NextResponse.json({ error: "Not found." }, { status: 404 });
-  const { email, password, name, orgSlug } = parsed.data;
+  const { email, password, name, orgSlug, role } = parsed.data;
   const db = getDb();
   const orgs = await db
     .select()
@@ -57,12 +58,12 @@ export async function POST(req: Request) {
     await db.insert(memberships).values({
       userId: created.user.id,
       orgId: orgs[0].id,
-      role: "admin",
+      role,
       status: "active",
     });
   }
   return NextResponse.json(
-    { data: { userId: created.user.id, orgId: orgs[0].id, role: "admin" } },
+    { data: { userId: created.user.id, orgId: orgs[0].id, role } },
     { status: 201 }
   );
 }

@@ -1,6 +1,6 @@
 "use client";
-// P10–P11 / F05.08–09 Record + Recorded. Honest outcomes incl. negative.
-import { use, useState } from "react";
+// P10–P11 / F05.08–09 Record + Recorded. Live POST, local fallback.
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shell, Card, Field, PrimaryButton, inputCls } from "@/components/ui";
 import { loadActions, saveActions, loadPeople, savePeople } from "@/lib/data";
@@ -15,8 +15,19 @@ export default function Record({
   const [channel, setChannel] = useState("WhatsApp");
   const [outcome, setOutcome] = useState("Reached — warm conversation");
   const [notes, setNotes] = useState("");
+  const [error, setError] = useState("");
+  const [livePerson, setLivePerson] = useState<string | null>(null);
 
-  function save() {
+  useEffect(() => {
+    fetch(`/api/actions/${id}`, { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (j?.data?.personId) setLivePerson(j.data.personId as string);
+      })
+      .catch(() => {});
+  }, [id]);
+
+  function localSave() {
     const actions = loadActions().map((a) =>
       a.id === id ? { ...a, status: "Completed" as const, outcome } : a
     );
@@ -26,23 +37,50 @@ export default function Record({
       savePeople(
         loadPeople().map((p) =>
           p.id === act.personId
-            ? {
-                ...p,
-                journey: "Contacted",
-                lastContact: `Today via ${channel}`,
-                nextAction: "Pursue connection",
-              }
+            ? { ...p, journey: "Contacted", lastContact: `Today via ${channel}`, nextAction: "Pursue connection" }
             : p
         )
       );
+      sessionStorage.setItem("roe.lastPerson", act.personId);
     }
     sessionStorage.setItem("roe.lastOutcome", `${channel} · ${outcome}${notes ? ` · ${notes}` : ""}`);
     router.push(`/actions/${id}/recorded`);
   }
 
+  async function save() {
+    setError("");
+    if (livePerson) {
+      try {
+        const r = await fetch("/api/interactions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ personId: livePerson, actionId: id, channel, outcome, notes }),
+        });
+        const j = await r.json().catch(() => null);
+        if (r.ok) {
+          sessionStorage.setItem("roe.lastOutcome", `${channel} · ${outcome}${notes ? ` · ${notes}` : ""}`);
+          sessionStorage.setItem("roe.lastPerson", livePerson);
+          router.push(`/actions/${id}/recorded`);
+          return;
+        }
+        if (r.status === 422 && j?.error) {
+          setError(j.error);
+          return;
+        }
+      } catch {}
+    }
+    localSave();
+  }
+
   return (
     <Shell title="Record interaction" back={`/actions/${id}`} tab="actions">
       <div className="flex flex-col gap-4">
+        {!livePerson && (
+          <p className="rounded-lg bg-[#DBEAFE] p-2 text-[12px] text-[#1E3A8A]">
+            Demo data — sign in for live recording.
+          </p>
+        )}
         <Field label="Channel">
           <select className={inputCls} value={channel} onChange={(e) => setChannel(e.target.value)}>
             <option>WhatsApp</option>
@@ -51,7 +89,7 @@ export default function Record({
             <option>Other</option>
           </select>
         </Field>
-        <Field label="Outcome (honest — negative allowed)">
+        <Field label="Outcome (honest — negative allowed)" error={error}>
           <select className={inputCls} value={outcome} onChange={(e) => setOutcome(e.target.value)}>
             <option>Reached — warm conversation</option>
             <option>Reached — asked to call back</option>
@@ -70,8 +108,7 @@ export default function Record({
         </Field>
         <Card>
           <p className="text-[13px] text-[#667370]">
-            Saving records the interaction. It does not claim a relationship was
-            built. Next you&apos;ll confirm the journey and connection.
+            Saving records the interaction. It does not claim a relationship was built.
           </p>
         </Card>
         <PrimaryButton onClick={save}>Save interaction</PrimaryButton>

@@ -91,5 +91,77 @@ let newId = "";
   const r = await req("GET", `/api/people/00000000-0000-0000-0000-000000000000`);
   check("missing id → 404", r.status === 404, `got=${r.status}`);
 }
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+{
+  const r = await req("GET", "/api/me");
+  check("me → 200 self", r.status === 200 && !!r.j?.data?.userId, `got=${r.status}`);
+}
+let adminCookie = cookie;
+let actionId = "", action2Id = "";
+{
+  const r = await req("GET", "/api/users");
+  check("users directory → 200", r.status === 200 && Array.isArray(r.j?.data), `got=${r.status}`);
+}
+{
+  const r = await req("POST", "/api/actions", { personId: newId, type: "X", assigneeUserId: "00000000-0000-0000-0000-000000000000", dueAt: "2099-01-01" });
+  check("assign outsider → 422", r.status === 422, `got=${r.status}`);
+}
+{
+  const r = await req("POST", "/api/actions", { personId: newId, type: "Welcome call", assigneeUserId: adminId, dueAt: "2000-01-01" });
+  check("past due → 422", r.status === 422, `got=${r.status}`);
+}
+{
+  const r = await req("POST", "/api/actions", { personId: newId, type: "Welcome call", assigneeUserId: adminId, dueAt: "2099-01-02" });
+  check("assign self → 201", r.status === 201 && !!r.j?.data?.id, `got=${r.status}`);
+  actionId = r.j?.data?.id ?? "";
+}
+{
+  const r = await req("POST", "/api/actions", { personId: newId, type: "Second task", assigneeUserId: adminId, dueAt: "2099-01-03" });
+  action2Id = r.j?.data?.id ?? "";
+  check("second action → 201", r.status === 201, `got=${r.status}`);
+}
+{
+  const r = await req("GET", "/api/actions?tab=all");
+  check("actions list contains new", r.status === 200 && (r.j?.data ?? []).some((a) => a.id === actionId), `got=${r.status}`);
+}
+{
+  const r = await req("POST", `/api/actions/${action2Id}/transition`, { to: "Completed" });
+  check("complete w/o outcome → 422", r.status === 422, `got=${r.status}`);
+}
+{
+  const r = await req("POST", `/api/actions/${actionId}/transition`, { to: "In Progress" });
+  check("start → 200 In Progress", r.status === 200 && r.j?.data?.status === "In Progress", `got=${r.status}`);
+}
+{
+  const r = await req("POST", "/api/interactions", { personId: newId, actionId, channel: "WhatsApp", outcome: "Reached — warm conversation", notes: "smoke" });
+  check("record interaction → 201", r.status === 201, `got=${r.status}`);
+}
+{
+  const r = await req("GET", `/api/actions/${actionId}`);
+  check("action auto-completed", r.status === 200 && r.j?.data?.status === "Completed", `got=${r.status}`);
+}
+{
+  const r = await req("PATCH", `/api/actions/${action2Id}`, { dueAt: "2099-02-01" });
+  check("reschedule → 200", r.status === 200, `got=${r.status}`);
+}
+{
+  const r = await req("GET", "/api/notifications");
+  check("assignment notification present", r.status === 200 && (r.j?.data ?? []).some((n) => n.type === "assignment"), `got=${r.status}`);
+}
+// Second user (worker): assignee-only enforcement
+{
+  const email2 = `smoke2-${Date.now()}@grace-pilot.test`;
+  await sleep(2000);
+  const s2 = await req("POST", "/api/setup", { secret, email: email2, password, name: "Smoke Two", role: "worker" }, false);
+  check("second setup → 201", s2.status === 201, `got=${s2.status}`);
+  const savedCookie = cookie;
+  cookie = "";
+  await sleep(2000);
+  const si = await req("POST", "/api/auth/sign-in/email", { email: email2, password }, false);
+  check("second sign-in → 200", si.status === 200, `got=${si.status}`);
+  const t = await req("POST", `/api/actions/${action2Id}/transition`, { to: "Paused", reason: "x" });
+  check("non-assignee non-admin transition → 403", t.status === 403, `got=${t.status}`);
+  cookie = savedCookie;
+}
 console.log(`smoke: pass=${pass} fail=${fail} admin=${adminId ? "created" : "MISSING"}`);
 process.exit(fail ? 1 : 0);
