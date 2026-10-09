@@ -2,6 +2,8 @@
 Based on: PRD v1.0 (8 Oct 2026, consolidated baseline). Fixes gaps in TRD v1.0, UI Design System v1.0, Figma Spec v1.1. Informed by n=12 survey.
 Date: 9 Oct 2026 | Repo: vickiewondaz/ROE-No-one-lost-to-silence
 
+> STATUS 9 Oct 2026 (end of day): P0 backend COMPLETE and live — people/actions/interactions/connections/invites/platform APIs, RLS verified, smoke 80/80 + unit 20/20, prod clean with 1 admin. Naming: F-IDs + Prototypes A–H canonical (Figma v1.2.1; P01–P20 references below map 1:1). Hosting: Netlify prod (TRD amendment A1); Vercel kept as fallback. Remaining build: roles polish tail, desktop follow-through, notifications surface (writes exist), docs tidy, pilot recruitment.
+
 ## 0. Lock these before code
 
 ### 0.1 Canonical journey (PRD §5 is source of truth)
