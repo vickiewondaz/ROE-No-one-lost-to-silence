@@ -53,6 +53,12 @@ export default function More() {
           depth are future — tagged, not built.
         </p>
       </Card>
+      <Link
+        href="/settings/password"
+        className="mt-2 block rounded-lg border border-[#E2E8E6] bg-white px-3 py-2.5 text-[14px] font-medium text-[#0F766E]"
+      >
+        Change password →
+      </Link>
       <h2 className="font-display mt-4 text-[16px] font-semibold">
         Prototype index — all 20 frames
       </h2>

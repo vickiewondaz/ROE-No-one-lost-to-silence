@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
+import { dbUuid } from "@/lib/validate";
 import { getDb } from "@/lib/db/client";
 import { actions, assignmentHistory, auditLogs, memberships, notifications, people } from "@/lib/db/schema";
 import { actionDTO, toBucket, type ActionTab } from "@/lib/actions";
@@ -12,9 +13,9 @@ import { requireSession } from "@/lib/session";
 import { can } from "@/lib/authz";
 
 const createSchema = z.object({
-  personId: z.string().uuid(),
+  personId: dbUuid,
   type: z.string().trim().min(2).max(80),
-  assigneeUserId: z.string().uuid(),
+  assigneeUserId: dbUuid,
   dueAt: z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
   notes: z.string().trim().max(1000).optional().default(""),
 });

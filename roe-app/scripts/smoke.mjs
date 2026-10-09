@@ -184,7 +184,79 @@ let inviteToken = "";
   check("second sign-in → 200", si.status === 200, `got=${si.status}`);
   const t = await req("POST", `/api/actions/${action2Id}/transition`, { to: "Paused", reason: "x" });
   check("non-assignee non-admin transition → 403", t.status === 403, `got=${t.status}`);
+  const gl = await req("GET", "/api/groups");
+  const anyGroupId = ((gl.j?.data ?? []).find((g) => g.name === "Young Adults") ?? (gl.j?.data ?? [])[0])?.id ?? "";
+  // NOTE: seeded fixture ids (4444…/9999…) are valid Postgres uuid but not
+  // RFC-4122 variants, so zod .uuid() rejects them on write paths. Reads list
+  // them fine; writes below use a freshly created group (proper uuid).
+  const sg = await req("POST", "/api/connections", { personId: newId, groupId: anyGroupId });
+  check("unassigned worker suggest → 403", sg.status === 403, `got=${sg.status}`);
   cookie = savedCookie;
+}
+// Connections flow (admin cookie active)
+let yaGroupId = "", connId = "", conn2Id = "", testGroupId = "";
+{
+  const r = await req("GET", "/api/groups");
+  const list = r.j?.data ?? [];
+  yaGroupId = (list.find((g) => g.name === "Young Adults") ?? list[0])?.id ?? "";
+  check("groups list → Young Adults", r.status === 200 && !!yaGroupId, `got=${r.status}`);
+}
+{
+  const r = await req("POST", "/api/groups", { name: "Test Choir" });
+  check("group create (admin) → 201", r.status === 201, `got=${r.status}`);
+  testGroupId = r.j?.data?.id ?? "";
+}
+{
+  const r = await req("POST", "/api/connections", { personId: newId, groupId: testGroupId });
+  check("suggest → 201", r.status === 201 && !!r.j?.data?.id, `got=${r.status}`);
+  connId = r.j?.data?.id ?? "";
+}
+{
+  const r = await req("POST", `/api/connections/${connId}/introduce`);
+  check("introduce → 200", r.status === 200, `got=${r.status}`);
+}
+{
+  const r = await req("POST", `/api/connections/${connId}/introduce`);
+  check("re-introduce → 422", r.status === 422, `got=${r.status}`);
+}
+{
+  const r = await req("POST", `/api/connections/${connId}/outcome`, { result: "not-attended" });
+  check("outcome not-attended → 200", r.status === 200, `got=${r.status}`);
+}
+{
+  const r = await req("POST", `/api/connections/${connId}/confirm`);
+  check("confirm w/o attendance → 422", r.status === 422, `got=${r.status}`);
+}
+{
+  const s = await req("POST", "/api/connections", { personId: newId, groupId: yaGroupId });
+  conn2Id = s.j?.data?.id ?? "";
+  await req("POST", `/api/connections/${conn2Id}/introduce`);
+  const o = await req("POST", `/api/connections/${conn2Id}/outcome`, { result: "attended", notes: "warm welcome" });
+  check("outcome attended → 200", o.status === 200, `got=${o.status}`);
+  const c = await req("POST", `/api/connections/${conn2Id}/confirm`);
+  check("confirm attended → 200", c.status === 200, `got=${c.status}`);
+}
+{
+  const r = await req("GET", `/api/connections?personId=${newId}`);
+  check("connection list has confirmed", r.status === 200 && (r.j?.data ?? []).some((c) => c.status === "Confirmed"), `got=${r.status}`);
+}
+// Password change (admin)
+{
+  const r = await req("POST", "/api/auth/change-password", { currentPassword: "WrongPass000!", newPassword: "NewSmokePass456!" });
+  check("wrong current → 4xx", r.status >= 400 && r.status < 500, `got=${r.status}`);
+}
+{
+  const r = await req("POST", "/api/auth/change-password", { currentPassword: password, newPassword: "NewSmokePass456!" });
+  check("change password → 200", r.status === 200, `got=${r.status}`);
+}
+{
+  cookie = "";
+  await sleep(2000);
+  const bad = await req("POST", "/api/auth/sign-in/email", { email, password }, false);
+  check("old password dead → 4xx", bad.status >= 400, `got=${bad.status}`);
+  await sleep(2000);
+  const good = await req("POST", "/api/auth/sign-in/email", { email, password: "NewSmokePass456!" }, false);
+  check("new password works → 200", good.status === 200, `got=${good.status}`);
 }
 console.log(`smoke: pass=${pass} fail=${fail} admin=${adminId ? "created" : "MISSING"}`);
 process.exit(fail ? 1 : 0);

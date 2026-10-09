@@ -5,13 +5,14 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
+import { dbUuid } from "@/lib/validate";
 import { getDb } from "@/lib/db/client";
 import { actions, auditLogs, interactions, people } from "@/lib/db/schema";
 import { requireSession } from "@/lib/session";
 
 const bodySchema = z.object({
-  personId: z.string().uuid(),
-  actionId: z.string().uuid().optional(),
+  personId: dbUuid,
+  actionId: dbUuid.optional(),
   channel: z.enum(["Call", "WhatsApp", "Visit", "Other"]),
   outcome: z.enum([
     "Reached — warm conversation",

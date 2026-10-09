@@ -1,9 +1,17 @@
 "use client";
-// P16–P17 / F06.06–07 Participation + Confirmed. Honest outcome required.
-import { use, useState } from "react";
+// P16–P17 / F06.06–07 Participation + Confirmed. Live API, local fallback.
+// Honest outcome required; only attended outcomes can be confirmed.
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shell, Card, Field, PrimaryButton, inputCls } from "@/components/ui";
 import { loadPeople, savePeople } from "@/lib/data";
+
+const OPTIONS = [
+  { label: "Attended — welcomed", result: "attended" },
+  { label: "Attended — quiet, follow up", result: "attended" },
+  { label: "Did not attend yet", result: "not-attended" },
+  { label: "Not interested in this group", result: "not-interested" },
+] as const;
 
 export default function Participation({
   params,
@@ -12,10 +20,23 @@ export default function Participation({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const [outcome, setOutcome] = useState("Attended — welcomed");
-  const [done, setDone] = useState(false);
+  const [outcome, setOutcome] = useState<string>(OPTIONS[0].label);
+  const [connId, setConnId] = useState<string | null>(null);
+  const [done, setDone] = useState<null | { attended: boolean; text: string }>(null);
+  const [error, setError] = useState("");
 
-  function save() {
+  useEffect(() => {
+    fetch(`/api/connections?personId=${id}`, { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        const list = (j?.data ?? []) as { id: string; status: string }[];
+        const open = list.find((c) => c.status === "Introduced" || c.status === "ParticipationRecorded");
+        if (open) setConnId(open.id);
+      })
+      .catch(() => {});
+  }, [id]);
+
+  function localSave() {
     const confirmed = outcome.startsWith("Attended");
     savePeople(
       loadPeople().map((p) =>
@@ -29,7 +50,41 @@ export default function Participation({
           : p
       )
     );
-    setDone(true);
+    setDone({ attended: confirmed, text: outcome });
+  }
+
+  async function save() {
+    setError("");
+    const result = OPTIONS.find((o) => o.label === outcome)?.result ?? "not-attended";
+    if (connId) {
+      try {
+        const r1 = await fetch(`/api/connections/${connId}/outcome`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ result }),
+        });
+        const j1 = await r1.json().catch(() => null);
+        if (!r1.ok) {
+          setError(j1?.error ?? "Couldn't save the outcome.");
+          return;
+        }
+        if (result === "attended") {
+          const r2 = await fetch(`/api/connections/${connId}/confirm`, {
+            method: "POST",
+            credentials: "same-origin",
+          });
+          const j2 = await r2.json().catch(() => null);
+          if (!r2.ok) {
+            setError(j2?.error ?? "Couldn't confirm the connection.");
+            return;
+          }
+        }
+        setDone({ attended: result === "attended", text: outcome });
+        return;
+      } catch {}
+    }
+    localSave();
   }
 
   if (done)
@@ -37,16 +92,17 @@ export default function Participation({
       <Shell title="Connection confirmed">
         <Card>
           <p className="font-display text-[18px] font-semibold">
-            {outcome.startsWith("Attended") ? "✓ Connection recorded" : "✓ Outcome recorded"}
+            {done.attended ? "✓ Connection recorded" : "✓ Outcome recorded"}
           </p>
           <p className="mt-1 text-[14px] text-[#667370]">
-            {outcome}. {outcome.startsWith("Attended") ? "Participation is recorded — belonging grows over time, not in one visit." : "Honest record kept. No penalty, no judgment — set the right next step."}
+            {done.text}.{" "}
+            {done.attended
+              ? "Participation is recorded — belonging grows over time, not in one visit."
+              : "Honest record kept. No penalty, no judgment — set the right next step."}
           </p>
         </Card>
         <div className="mt-3">
-          <PrimaryButton href={`/people/${id}/next`}>
-            Create next action →
-          </PrimaryButton>
+          <PrimaryButton href={`/people/${id}/next`}>Create next action →</PrimaryButton>
         </div>
       </Shell>
     );
@@ -54,12 +110,16 @@ export default function Participation({
   return (
     <Shell title="First participation" back={`/people/${id}/suggest`}>
       <div className="flex flex-col gap-4">
-        <Field label="What happened after the introduction?">
+        {!connId && (
+          <p className="rounded-lg bg-[#DBEAFE] p-2 text-[12px] text-[#1E3A8A]">
+            Demo data — sign in and record an introduction first for live tracking.
+          </p>
+        )}
+        <Field label="What happened after the introduction?" error={error}>
           <select className={inputCls} value={outcome} onChange={(e) => setOutcome(e.target.value)}>
-            <option>Attended — welcomed</option>
-            <option>Attended — quiet, follow up</option>
-            <option>Did not attend yet</option>
-            <option>Not interested in this group</option>
+            {OPTIONS.map((o) => (
+              <option key={o.label}>{o.label}</option>
+            ))}
           </select>
         </Field>
         <PrimaryButton onClick={save}>Save outcome</PrimaryButton>

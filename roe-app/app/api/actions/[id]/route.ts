@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
+import { dbUuid } from "@/lib/validate";
 import { getDb } from "@/lib/db/client";
 import { actions, assignmentHistory, auditLogs, memberships, notifications } from "@/lib/db/schema";
 import { actionDTO } from "@/lib/actions";
@@ -12,7 +13,7 @@ import { requireSession } from "@/lib/session";
 const patchSchema = z
   .object({
     dueAt: z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
-    assigneeUserId: z.string().uuid().optional(),
+    assigneeUserId: dbUuid.optional(),
   })
   .refine((v) => v.dueAt !== undefined || v.assigneeUserId !== undefined, {
     message: "Nothing to update.",
