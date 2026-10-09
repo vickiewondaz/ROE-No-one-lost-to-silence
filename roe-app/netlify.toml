@@ -1,0 +1,11 @@
+# Netlify deploy config (pilot). TRD baseline was Vercel; moved per pilot need
+# for a public free URL (Vercel SSO wall). Vercel project kept as fallback.
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Next.js App Router: CLI auto-detects Next + provisions the Next runtime.
+# No redirects/middleware. Env vars set via `netlify env:set` (production).

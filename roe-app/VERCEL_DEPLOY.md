@@ -1,4 +1,8 @@
-# ROE — Vercel Deploy Checklist (pilot)
+# ROE — Deploy Checklist (pilot)
+> LIVE: https://roe-pilot.netlify.app (Netlify, public, no wall). Vercel project
+> `vickie2/roe-app` kept as fallback (prod https://roe-6ng1d1fed-vickie2.vercel.app,
+> gated by Vercel Authentication until toggled off in dashboard).
+> Hosting baseline moved Vercel→Netlify per pilot need; TRD §2 to be amended.
 Stack: Next.js 16 + Postgres + Better Auth + Drizzle + RLS. Source: TRD v1.1 §§2/12/13, Implementation Plan §6.
 
 ## 0. Preconditions (local, done once)
