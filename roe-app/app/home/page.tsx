@@ -29,6 +29,7 @@ export default function HomePage() {
   const [actions, setActions] = useState<RemoteAction[] | null>(null);
   const [intros, setIntros] = useState<Intro[]>([]);
   const [myPerson, setMyPerson] = useState<Person | null>(null);
+  const [celebrations, setCelebrations] = useState<{ personId: string; personName: string; label: string; date: string; inDays: number }[]>([]);
 
   useEffect(() => {
     loadActions();
@@ -58,6 +59,12 @@ export default function HomePage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         if (Array.isArray(j?.data)) setActions(j.data as RemoteAction[]);
+      })
+      .catch(() => {});
+    fetch("/api/milestones/upcoming?days=14", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (Array.isArray(j?.data)) setCelebrations(j.data);
       })
       .catch(() => {});
   }, []);
@@ -185,9 +192,42 @@ export default function HomePage() {
               <Link key={a.id} href={`/actions/${a.id}`}>
                 <Card>
                   <p className="text-[14px]">
-                    <strong>{a.personName}</strong> · {a.title}
+                    {a.personName} · {a.title}
                   </p>
                   <p className="font-mono2 text-[12px] text-[#667370]">{a.dueLabel}</p>
+                </Card>
+              </Link>
+            ))}
+            {celebrations.map((c) => (
+              <Link key={`${c.personId}-${c.date}`} href={`/people/${c.personId}`}>
+                <Card>
+                  <p className="text-[14px]">
+                    🎉 {c.personName} · {c.label}
+                  </p>
+                  <p className="font-mono2 text-[12px] text-[#667370]">
+                    {c.inDays === 0 ? "Today!" : `in ${c.inDays}d · ${c.date.slice(5)}`} — a personal message beats a broadcast
+                  </p>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
+      {upcoming.length === 0 && celebrations.length > 0 && (
+        <>
+          <div className="mt-4">
+            <SectionHead title="Coming up" count={celebrations.length} />
+          </div>
+          <div className="mt-2 flex flex-col gap-2">
+            {celebrations.map((c) => (
+              <Link key={`${c.personId}-${c.date}`} href={`/people/${c.personId}`}>
+                <Card>
+                  <p className="text-[14px]">
+                    🎉 {c.personName} · {c.label}
+                  </p>
+                  <p className="font-mono2 text-[12px] text-[#667370]">
+                    {c.inDays === 0 ? "Today!" : `in ${c.inDays}d · ${c.date.slice(5)}`} — a personal message beats a broadcast
+                  </p>
                 </Card>
               </Link>
             ))}

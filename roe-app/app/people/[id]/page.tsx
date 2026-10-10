@@ -4,7 +4,7 @@
 // (P1 care) — a locked placeholder marks the boundary, never the content.
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { Shell, Card, StatusPill, Avatar, JourneyStepper, SectionHead } from "@/components/ui";
+import { Shell, Card, StatusPill, Avatar, JourneyStepper, SectionHead, inputCls } from "@/components/ui";
 import { loadPeople, type Person } from "@/lib/data";
 
 interface ProfileDTO extends Person {
@@ -17,6 +17,18 @@ interface FeedItem {
   title: string;
   detail: string;
 }
+interface Milestone {
+  id: string;
+  type: string;
+  month: string;
+  day: string;
+  notes: string;
+}
+
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
 
 function dayLabel(iso: string): string {
   const d = new Date(iso);
@@ -40,6 +52,11 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
   const [person, setPerson] = useState<ProfileDTO | undefined>();
   const [feed, setFeed] = useState<FeedItem[] | null>(null);
   const [missing, setMissing] = useState(false);
+  const [milestones, setMilestones] = useState<Milestone[] | null>(null);
+  const [mType, setMType] = useState("birthday");
+  const [mMonth, setMMonth] = useState("1");
+  const [mDay, setMDay] = useState("");
+  const [mError, setMError] = useState("");
 
   useEffect(() => {
     fetch(`/api/people/${id}`)
@@ -76,6 +93,12 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         if (Array.isArray(j?.data)) setFeed(j.data as FeedItem[]);
+      })
+      .catch(() => {});
+    fetch(`/api/people/${id}/milestones`, { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (Array.isArray(j?.data)) setMilestones(j.data as Milestone[]);
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -254,6 +277,122 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
           in a later release) — never in this timeline, never visible here.
         </p>
       </div>
+
+      <div className="mt-4">
+        <SectionHead title="Celebrations" count={milestones?.length} />
+      </div>
+      <Card>
+        {milestones === null ? (
+          <p className="text-[13px] text-[#667370]">Sign in to see recorded dates.</p>
+        ) : milestones.length === 0 ? (
+          <p className="text-[13px] text-[#667370]">
+            None recorded — birthdays and anniversaries appear here so nobody's day passes unnoticed.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            {milestones.map((m) => (
+              <p key={m.id} className="text-[14px]">
+                🎉 <strong className="capitalize">{m.type}</strong> · {MONTHS[Number(m.month) - 1]} {Number(m.day)}
+                {m.notes ? ` · ${m.notes}` : ""}
+              </p>
+            ))}
+          </div>
+        )}
+        <AddMilestone
+          personId={id}
+          mType={mType}
+          setMType={setMType}
+          mMonth={mMonth}
+          setMMonth={setMMonth}
+          mDay={mDay}
+          setMDay={setMDay}
+          mError={mError}
+          setMError={setMError}
+          onSaved={(m: Milestone) => setMilestones((prev) => [...(prev ?? []), m])}
+        />
+      </Card>
     </Shell>
+  );
+}
+
+function AddMilestone(props: {
+  personId: string;
+  mType: string;
+  setMType: (v: string) => void;
+  mMonth: string;
+  setMMonth: (v: string) => void;
+  mDay: string;
+  setMDay: (v: string) => void;
+  mError: string;
+  setMError: (v: string) => void;
+  onSaved: (m: Milestone) => void;
+}) {
+  const { personId, mType, setMType, mMonth, setMMonth, mDay, setMDay, mError, setMError, onSaved } = props;
+  const [open, setOpen] = useState(false);
+  if (!open)
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="tap-target mt-2 w-full rounded-lg border border-[#E2E8E6] text-[14px] font-medium text-[#0F766E]"
+      >
+        + Add birthday or anniversary
+      </button>
+    );
+  async function save() {
+    setMError("");
+    try {
+      const r = await fetch(`/api/people/${personId}/milestones`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ type: mType, month: Number(mMonth), day: Number(mDay) }),
+      });
+      const j = await r.json().catch(() => null);
+      if (r.ok && j?.data) {
+        onSaved(j.data as Milestone);
+        setOpen(false);
+        setMDay("");
+        return;
+      }
+      setMError(j?.error ?? "Couldn't save it.");
+    } catch {
+      setMError("Couldn't reach the server.");
+    }
+  }
+  return (
+    <div className="mt-2 flex flex-col gap-2 rounded-lg bg-[#F8FAF9] p-3">
+      <div className="grid grid-cols-3 gap-2">
+        <select className={inputCls} value={mType} onChange={(e) => setMType(e.target.value)} aria-label="Type">
+          <option value="birthday">Birthday</option>
+          <option value="anniversary">Anniversary</option>
+          <option value="milestone">Milestone</option>
+        </select>
+        <select className={inputCls} value={mMonth} onChange={(e) => setMMonth(e.target.value)} aria-label="Month">
+          {MONTHS.map((m, i) => (
+            <option key={m} value={String(i + 1)}>
+              {m}
+            </option>
+          ))}
+        </select>
+        <input
+          className={inputCls}
+          value={mDay}
+          onChange={(e) => setMDay(e.target.value)}
+          placeholder="Day"
+          inputMode="numeric"
+          aria-label="Day"
+        />
+      </div>
+      {mError && <p className="text-[13px] font-medium text-[#DC2626]">⚠ {mError}</p>}
+      <p className="text-[12px] text-[#667370]">Month + day only — never ask the year.</p>
+      <button
+        type="button"
+        onClick={save}
+        className="tap-target rounded-lg bg-[#0F766E] text-[14px] font-semibold text-white"
+      >
+        Save date
+      </button>
+    </div>
   );
 }

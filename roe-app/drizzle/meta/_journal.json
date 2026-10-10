@@ -71,6 +71,20 @@
       "when": 1791590000000,
       "tag": "0006_join_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791615008816,
+      "tag": "0006_abandoned_newton_destine",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": 7,
+      "when": 1791591000000,
+      "tag": "0007_celebrations",
+      "breakpoints": true
     }
   ]
 }

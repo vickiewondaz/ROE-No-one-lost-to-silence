@@ -458,5 +458,22 @@ let joinReqId = "", joinToken = "";
   const u = await req("POST", "/api/auth/request-password-reset", { email: "nobody@t.co" }, false);
   check("forgot-password unknown → 200 (no enumeration)", u.status === 200, `got=${u.status}`);
 }
+// ---- Celebrations: scoped milestones + upcoming ----
+// NOTE: admin cookie must be active here (restored at end of depth block).
+{
+  const d = new Date(Date.now() + 3 * 86400000);
+  const mm = d.getUTCMonth() + 1;
+  const dd = d.getUTCDate();
+  const bad = await req("POST", `/api/people/${newId}/milestones`, { type: "birthday", month: 2, day: 30 });
+  check("impossible date → 422", bad.status === 422, `got=${bad.status}`);
+  const r = await req("POST", `/api/people/${newId}/milestones`, { type: "birthday", month: mm, day: dd, notes: "" });
+  check("milestone create → 201", r.status === 201, `got=${r.status}`);
+  const l = await req("GET", `/api/people/${newId}/milestones`);
+  check("milestone list → 1+", l.status === 200 && (l.j?.data ?? []).length >= 1, `got=${l.status}`);
+  const up = await req("GET", "/api/milestones/upcoming?days=14");
+  check("upcoming includes it", up.status === 200 && (up.j?.data ?? []).some((m) => m.personId === newId), `got=${up.status}`);
+  const ghost = await req("GET", "/api/people/00000000-0000-0000-0000-000000000000/milestones");
+  check("milestones unknown person → 404", ghost.status === 404, `got=${ghost.status}`);
+}
 console.log(`smoke: pass=${pass} fail=${fail} admin=${adminId ? "created" : "MISSING"}`);
 process.exit(fail ? 1 : 0);

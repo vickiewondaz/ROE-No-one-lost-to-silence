@@ -270,3 +270,19 @@ export const invitations = pgTable("invitations", {
   acceptedAt: timestamp("accepted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// Milestones (celebrations P1, promoted scoped slice): birthdays, wedding
+// anniversaries, custom. Month+day only — birth YEAR never required.
+// Personal acknowledgement over automation; no mass messaging anywhere.
+export const milestones = pgTable("milestones", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orgId: uuid("org_id").notNull(),
+  personId: uuid("person_id")
+    .notNull()
+    .references(() => people.id, { onDelete: "cascade" }),
+  type: text("type").notNull(),
+  month: text("month").notNull(),
+  day: text("day").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
