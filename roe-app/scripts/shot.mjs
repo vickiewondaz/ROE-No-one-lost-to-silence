@@ -4,6 +4,7 @@ import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 
 const base = process.argv[2] ?? "http://localhost:3125";
+const mode = process.argv[3] ?? "default";
 const out = "screenshots";
 mkdirSync(out, { recursive: true });
 
@@ -11,6 +12,35 @@ const mob = { width: 390, height: 844, isMobile: true, hasTouch: true };
 const desk = { width: 1440, height: 900 };
 
 const browser = await chromium.launch();
+
+async function loginAs(pg, email, password) {
+  await pg.goto(base + "/login", { waitUntil: "networkidle" });
+  await pg.fill('input[type="email"]', email);
+  await pg.fill('input[type="password"]', password);
+  await pg.click('button[type="submit"]');
+  await pg.waitForTimeout(2500);
+}
+
+if (mode === "roles") {
+  // Riverside Chapel, DemoPass123! — worker, leader, member, admin views.
+  async function roleShot(email, path, name) {
+    const ctx = await browser.newContext({ viewport: { width: mob.width, height: mob.height }, isMobile: true, hasTouch: true });
+    const pg = await ctx.newPage();
+    await loginAs(pg, email, "DemoPass123!");
+    await pg.goto(base + path, { waitUntil: "networkidle" });
+    await pg.waitForTimeout(800);
+    await pg.screenshot({ path: `${out}/${name}.png` });
+    console.log("shot " + name);
+    await ctx.close();
+  }
+  await roleShot("david@riverside.test", "/home", "20-worker-home");
+  await roleShot("funke@riverside.test", "/home", "21-leader-home");
+  await roleShot("sarah@riverside.test", "/home", "22-member-home");
+  await roleShot("amara@riverside.test", "/admin", "23-riverside-admin");
+  await browser.close();
+  console.log("done");
+  process.exit(0);
+}
 async function snap(path, name, opts, setup) {
   const ctx = await browser.newContext({ viewport: { width: opts.width, height: opts.height }, isMobile: !!opts.isMobile, hasTouch: !!opts.hasTouch });
   const pg = await ctx.newPage();

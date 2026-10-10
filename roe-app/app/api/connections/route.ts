@@ -2,11 +2,11 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { dbUuid } from "@/lib/validate";
 import { getDb } from "@/lib/db/client";
-import { auditLogs, connections, groups } from "@/lib/db/schema";
+import { auditLogs, connections, groups, people } from "@/lib/db/schema";
 import { personInScope } from "@/lib/connections";
 import { requireSession } from "@/lib/session";
 
@@ -21,8 +21,35 @@ export async function GET(req: Request) {
   const s = await requireSession();
   if ("error" in s) return NextResponse.json({ error: s.message }, { status: s.error });
   const { ctx } = s;
-  const personId = new URL(req.url).searchParams.get("personId") ?? "";
+  const q = new URL(req.url).searchParams;
+  const personId = q.get("personId") ?? "";
+  const groupId = q.get("groupId") ?? "";
   const db = getDb();
+  // Group-scoped pending intros (Group Leader home). Leaders see only groups
+  // they lead; admin/senior see all. People data itself stays scoped per row.
+  if (groupId) {
+    if (!["admin", "senior"].includes(ctx.role) && !(ctx.ledGroupIds ?? []).includes(groupId))
+      return NextResponse.json({ error: "Restricted." }, { status: 403 });
+    const rows = await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT set_config('app.org_id', ${ctx.orgId}, true)`);
+      return tx
+        .select({ conn: connections, personName: people.firstName, personPhone: people.phone })
+        .from(connections)
+        .innerJoin(people, eq(people.id, connections.personId))
+        .where(and(eq(connections.groupId, groupId), eq(connections.orgId, ctx.orgId)))
+        .orderBy(desc(connections.at))
+        .limit(50);
+    });
+    return NextResponse.json({
+      data: rows.map((r) => ({
+        id: r.conn.id,
+        personId: r.conn.personId,
+        personName: r.personName,
+        status: r.conn.status,
+        outcome: r.conn.outcome ?? undefined,
+      })),
+    });
+  }
   const rows = await db.transaction(async (tx) => {
     await tx.execute(sql`SELECT set_config('app.org_id', ${ctx.orgId}, true)`);
     const scope = await personInScope(tx, ctx, personId);

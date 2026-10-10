@@ -179,8 +179,7 @@ export function Card({ children }: { children: ReactNode }) {
   );
 }
 
-export function StatusPill({ text }: { text: string }) {
-  return (
+export function StatusPill({ text }: { text: string }) {  return (
     <span className="inline-flex items-center gap-1 rounded-full bg-[#CCFBF1] px-2.5 py-1 text-[12px] font-medium text-[#115E59]">
       <span aria-hidden>●</span> {text}
     </span>
@@ -224,3 +223,84 @@ export function Field({
 
 export const inputCls =
   "tap-target w-full rounded-lg border border-[#E2E8E6] bg-white px-3 text-[16px] outline-none focus:border-[#0F766E] focus:ring-2 focus:ring-[#CCFBF1]";
+
+// Avatar: initials circle. No photo infra in MVP — consistent everywhere.
+export function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" }) {
+  const initials = name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join("");
+  const dims =
+    size === "lg" ? "h-14 w-14 text-[20px]" : size === "sm" ? "h-8 w-8 text-[13px]" : "h-10 w-10 text-[15px]";
+  return (
+    <span
+      aria-hidden
+      className={`flex shrink-0 items-center justify-center rounded-full bg-[#CCFBF1] font-display font-semibold text-[#115E59] ${dims}`}
+    >
+      {initials || "•"}
+    </span>
+  );
+}
+
+// SectionHead: "Title (count)" pattern for attention sections (P1).
+export function SectionHead({ title, count }: { title: string; count?: number }) {
+  return (
+    <h2 className="font-display text-[16px] font-semibold">
+      {title}
+      {count !== undefined && count > 0 && (
+        <span className="ml-2 rounded-full bg-[#0F766E] px-2 py-0.5 text-[12px] font-semibold text-white">
+          {count}
+        </span>
+      )}
+    </h2>
+  );
+}
+
+const JOURNEY_ORDER = ["New", "Assigned", "Contacted", "Connecting", "Connected"];
+
+// JourneyStepper: visual progress through the relationship journey.
+// Future stages (Engaged, Belonging) render greyed — direction, not status.
+export function JourneyStepper({ current }: { current: string }) {
+  const idx = Math.max(
+    0,
+    JOURNEY_ORDER.findIndex((s) => s.toLowerCase() === current.toLowerCase())
+  );
+  return (
+    <div aria-label={`Journey stage: ${current}`}>
+      <div className="flex items-center">
+        {JOURNEY_ORDER.map((s, i) => (
+          <div key={s} className="flex flex-1 items-center last:flex-none">
+            <span
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
+                i < idx
+                  ? "bg-[#0F766E] text-white"
+                  : i === idx
+                    ? "bg-[#0F766E] text-white ring-4 ring-[#CCFBF1]"
+                    : "bg-[#E2E8E6] text-[#667370]"
+              }`}
+            >
+              {i < idx ? "✓" : i + 1}
+            </span>
+            {i < JOURNEY_ORDER.length - 1 && (
+              <span className={`h-0.5 flex-1 ${i < idx ? "bg-[#0F766E]" : "bg-[#E2E8E6]"}`} />
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="mt-1 flex">
+        {JOURNEY_ORDER.map((s, i) => (
+          <p
+            key={s}
+            className={`flex-1 text-[11px] last:flex-none last:pr-0 ${
+              i === idx ? "font-semibold text-[#17201F]" : "text-[#667370]"
+            }`}
+          >
+            {s}
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+}
