@@ -474,6 +474,14 @@ let joinReqId = "", joinToken = "";
   check("upcoming includes it", up.status === 200 && (up.j?.data ?? []).some((m) => m.personId === newId), `got=${up.status}`);
   const ghost = await req("GET", "/api/people/00000000-0000-0000-0000-000000000000/milestones");
   check("milestones unknown person → 404", ghost.status === 404, `got=${ghost.status}`);
+  const ms = await req("GET", `/api/people/${newId}/milestones`);
+  const mid = (ms.j?.data ?? [])[0]?.id ?? "";
+  const ackBad = await req("POST", `/api/milestones/${mid}/acknowledge`, { channel: "Pigeon" });
+  check("bad channel → 422", ackBad.status === 422, `got=${ackBad.status}`);
+  const ack = await req("POST", `/api/milestones/${mid}/acknowledge`, { channel: "WhatsApp", notes: "sang together" });
+  check("acknowledge → 201", ack.status === 201, `got=${ack.status}`);
+  const tl = await req("GET", `/api/people/${newId}/timeline`);
+  check("greeting in timeline", tl.status === 200 && (tl.j?.data ?? []).some((e) => e.title.includes("Celebration acknowledged")), `got=${tl.status}`);
 }
 console.log(`smoke: pass=${pass} fail=${fail} admin=${adminId ? "created" : "MISSING"}`);
 process.exit(fail ? 1 : 0);

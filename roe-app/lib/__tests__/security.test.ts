@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { can, canTransition, type AuthCtx } from "@/lib/authz";
 import { dbUuid } from "@/lib/validate";
 import { toBucket } from "@/lib/actions";
+import { milestoneSchema, nextOccurrence } from "@/lib/milestones";
 import { omniChat, welcomeMessagePrompt } from "@/lib/ai/omniroute";
 
 const ORG = "11111111-1111-1111-8111-111111111111";
@@ -76,8 +77,7 @@ describe("dbUuid matches Postgres, not just RFC", () => {
   });
 });
 
-describe("toBucket", () => {
-  it("buckets by calendar day", () => {
+describe("toBucket", () => {  it("buckets by calendar day", () => {
     const t = new Date();
     const past = new Date(t.getTime() - 86400000);
     const future = new Date(t.getTime() + 2 * 86400000);
@@ -113,5 +113,24 @@ describe("omniroute adapter", () => {
     await expect(omniChat(msgs, { baseUrl: "http://x/v1" }, bad)).rejects.toThrow();
     const empty = vi.fn(async () => new Response(JSON.stringify({ choices: [] }))) as unknown as typeof fetch;
     await expect(omniChat(msgs, { baseUrl: "http://x/v1" }, empty)).rejects.toThrow();
+  });
+});
+
+describe("milestones: real dates only", () => {
+  it("accepts valid dates incl. Feb 29", () => {
+    expect(milestoneSchema.safeParse({ type: "birthday", month: 3, day: 15 }).success).toBe(true);
+    expect(milestoneSchema.safeParse({ type: "anniversary", month: 2, day: 29 }).success).toBe(true);
+  });
+  it("rejects impossible dates and bad types", () => {
+    expect(milestoneSchema.safeParse({ type: "birthday", month: 2, day: 30 }).success).toBe(false);
+    expect(milestoneSchema.safeParse({ type: "birthday", month: 13, day: 1 }).success).toBe(false);
+    expect(milestoneSchema.safeParse({ type: "party", month: 1, day: 1 }).success).toBe(false);
+  });
+  it("nextOccurrence lands this year or next, honoring leap birthdays", () => {
+    const n = nextOccurrence(2, 29);
+    expect([28, 29]).toContain(n.getUTCDate());
+    expect(n.getUTCMonth()).toBe(1);
+    const future = nextOccurrence(12, 25);
+    expect(future.getTime()).toBeGreaterThanOrEqual(Date.now() - 86400000);
   });
 });

@@ -47,6 +47,7 @@ export async function GET(req: Request) {
       if (diffDays < 0 || diffDays > days) continue;
       const person = visible.find((p) => p.id === m.personId);
       items.push({
+        id: m.id,
         personId: m.personId,
         personName: person ? `${person.firstName} ${person.lastName ?? ""}`.trim() : "Someone",
         type: m.type,

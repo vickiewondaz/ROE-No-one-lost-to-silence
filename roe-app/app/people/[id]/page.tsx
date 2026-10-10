@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { Shell, Card, StatusPill, Avatar, JourneyStepper, SectionHead, inputCls } from "@/components/ui";
+import { CelebrateActions } from "@/components/celebrate";
 import { loadPeople, type Person } from "@/lib/data";
 
 interface ProfileDTO extends Person {
@@ -291,10 +292,17 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
         ) : (
           <div className="flex flex-col gap-1.5">
             {milestones.map((m) => (
-              <p key={m.id} className="text-[14px]">
-                🎉 <strong className="capitalize">{m.type}</strong> · {MONTHS[Number(m.month) - 1]} {Number(m.day)}
-                {m.notes ? ` · ${m.notes}` : ""}
-              </p>
+              <div key={m.id}>
+                <p className="text-[14px]">
+                  🎉 <strong className="capitalize">{m.type}</strong> · {MONTHS[Number(m.month) - 1]} {Number(m.day)}
+                  {m.notes ? ` · ${m.notes}` : ""}
+                </p>
+                <CelebrateActions
+                  milestoneId={m.id}
+                  personName={`${person.firstName} ${person.lastName}`}
+                  type={m.type}
+                />
+              </div>
             ))}
           </div>
         )}

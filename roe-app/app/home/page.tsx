@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Shell, Card, AttentionPill, StatusPill, Avatar, SectionHead } from "@/components/ui";
+import { CelebrateActions } from "@/components/celebrate";
 import { loadActions, type Person } from "@/lib/data";
 import { usePeople } from "@/lib/use-people";
 
@@ -29,7 +30,7 @@ export default function HomePage() {
   const [actions, setActions] = useState<RemoteAction[] | null>(null);
   const [intros, setIntros] = useState<Intro[]>([]);
   const [myPerson, setMyPerson] = useState<Person | null>(null);
-  const [celebrations, setCelebrations] = useState<{ personId: string; personName: string; label: string; date: string; inDays: number }[]>([]);
+  const [celebrations, setCelebrations] = useState<{ id: string; personId: string; personName: string; type: string; label: string; date: string; inDays: number }[]>([]);
 
   useEffect(() => {
     loadActions();
@@ -199,16 +200,20 @@ export default function HomePage() {
               </Link>
             ))}
             {celebrations.map((c) => (
-              <Link key={`${c.personId}-${c.date}`} href={`/people/${c.personId}`}>
-                <Card>
-                  <p className="text-[14px]">
-                    🎉 {c.personName} · {c.label}
-                  </p>
-                  <p className="font-mono2 text-[12px] text-[#667370]">
-                    {c.inDays === 0 ? "Today!" : `in ${c.inDays}d · ${c.date.slice(5)}`} — a personal message beats a broadcast
-                  </p>
-                </Card>
-              </Link>
+              <Card key={`cel-${c.id}`}>
+                <p className="text-[14px]">
+                  🎉 <Link href={`/people/${c.personId}`} className="font-semibold text-[#0F766E]">{c.personName}</Link> · {c.label}
+                </p>
+                <p className="font-mono2 text-[12px] text-[#667370]">
+                  {c.inDays === 0 ? "Today!" : `in ${c.inDays}d · ${c.date.slice(5)}`}
+                </p>
+                <CelebrateActions
+                  milestoneId={c.id}
+                  personName={c.personName}
+                  type={c.type}
+                  onDone={() => setCelebrations((prev) => prev.filter((x) => x.id !== c.id))}
+                />
+              </Card>
             ))}
           </div>
         </>
@@ -220,16 +225,20 @@ export default function HomePage() {
           </div>
           <div className="mt-2 flex flex-col gap-2">
             {celebrations.map((c) => (
-              <Link key={`${c.personId}-${c.date}`} href={`/people/${c.personId}`}>
-                <Card>
-                  <p className="text-[14px]">
-                    🎉 {c.personName} · {c.label}
-                  </p>
-                  <p className="font-mono2 text-[12px] text-[#667370]">
-                    {c.inDays === 0 ? "Today!" : `in ${c.inDays}d · ${c.date.slice(5)}`} — a personal message beats a broadcast
-                  </p>
-                </Card>
-              </Link>
+              <Card key={`cel-${c.id}`}>
+                <p className="text-[14px]">
+                  🎉 <Link href={`/people/${c.personId}`} className="font-semibold text-[#0F766E]">{c.personName}</Link> · {c.label}
+                </p>
+                <p className="font-mono2 text-[12px] text-[#667370]">
+                  {c.inDays === 0 ? "Today!" : `in ${c.inDays}d · ${c.date.slice(5)}`}
+                </p>
+                <CelebrateActions
+                  milestoneId={c.id}
+                  personName={c.personName}
+                  type={c.type}
+                  onDone={() => setCelebrations((prev) => prev.filter((x) => x.id !== c.id))}
+                />
+              </Card>
             ))}
           </div>
         </>
