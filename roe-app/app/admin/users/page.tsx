@@ -18,6 +18,14 @@ interface Invite {
   role: string;
   status: string;
 }
+interface JoinReq {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  status: string;
+}
 interface Group {
   id: string;
   name: string;
@@ -28,16 +36,19 @@ const ROLES = ["worker", "group_leader", "member", "care"];
 export default function AdminUsers() {
   const [members, setMembers] = useState<Member[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
+  const [joins, setJoins] = useState<JoinReq[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [denied, setDenied] = useState(false);
   const [error, setError] = useState("");
+  const [note, setNote] = useState("");
   const [leadFor, setLeadFor] = useState<Record<string, string>>({});
 
   async function refresh() {
-    const [u, inv, g] = await Promise.all([
+    const [u, inv, g, jn] = await Promise.all([
       fetch("/api/users", { credentials: "same-origin" }),
       fetch("/api/invites", { credentials: "same-origin" }),
       fetch("/api/groups", { credentials: "same-origin" }),
+      fetch("/api/join", { credentials: "same-origin" }),
     ]);
     if (u.status === 403) {
       setDenied(true);
@@ -46,9 +57,11 @@ export default function AdminUsers() {
     const uj = u.ok ? await u.json() : null;
     const ij = inv.ok ? await inv.json() : null;
     const gj = g.ok ? await g.json() : null;
+    const jnj = jn.ok ? await jn.json() : null;
     if (uj?.data) setMembers(uj.data as Member[]);
     if (ij?.data) setInvites(ij.data as Invite[]);
     if (gj?.data) setGroups(gj.data as Group[]);
+    if (jnj?.data) setJoins(jnj.data as JoinReq[]);
   }
 
   useEffect(() => {
@@ -97,6 +110,32 @@ export default function AdminUsers() {
     else refresh();
   }
 
+  async function decideJoin(id: string, approve: boolean, role = "member") {
+    setError("");
+    setNote("");
+    try {
+      const r = await fetch(`/api/join/${id}/${approve ? "approve" : "decline"}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: approve ? JSON.stringify({ role }) : undefined,
+      });
+      const j = await r.json().catch(() => null);
+      if (!r.ok) {
+        setError(j?.error ?? "Couldn't decide it.");
+        return;
+      }
+      if (approve && j?.data?.token) {
+        const link = `${window.location.origin}/invite/${j.data.token}`;
+        await navigator.clipboard?.writeText(link).catch(() => {});
+        setNote(`Approved — invite link copied, send it via WhatsApp: ${link}`);
+      }
+      refresh();
+    } catch {
+      setError("Couldn't reach the server.");
+    }
+  }
+
   if (denied)
     return (
       <Shell title="Team" back="/admin" tab="more">
@@ -114,7 +153,51 @@ export default function AdminUsers() {
           {error}
         </p>
       )}
-      <h2 className="font-display text-[16px] font-semibold">Members · {members.length}</h2>
+      {error && (
+        <p className="mb-2 rounded-lg bg-[#FEE2E2] p-2 text-[13px] font-medium text-[#991B1B]">
+          {error}
+        </p>
+      )}
+      {note && (
+        <div className="mb-2 rounded-lg bg-[#DCFCE7] p-2 text-[13px] text-[#15803D]">
+          {note}
+        </div>
+      )}
+      <h2 className="font-display text-[16px] font-semibold">Join requests</h2>
+      <div className="mt-2 flex flex-col gap-2">
+        {joins
+          .filter((j) => j.status === "pending")
+          .map((j) => (
+            <Card key={j.id}>
+              <p className="font-display font-semibold">{j.name}</p>
+              <p className="font-mono2 text-[12px] text-[#667370]">{j.email}</p>
+              {j.phone && <p className="text-[13px] text-[#667370]">{j.phone}</p>}
+              {j.message && <p className="mt-1 text-[14px]">“{j.message}”</p>}
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => decideJoin(j.id, true)}
+                  className="tap-target flex-1 rounded-lg bg-[#0F766E] text-[14px] font-semibold text-white"
+                >
+                  Approve as member
+                </button>
+                <button
+                  type="button"
+                  onClick={() => decideJoin(j.id, false)}
+                  className="tap-target flex-1 rounded-lg border border-[#E2E8E6] text-[14px] font-medium"
+                >
+                  Decline
+                </button>
+              </div>
+            </Card>
+          ))}
+        {joins.filter((j) => j.status === "pending").length === 0 && (
+          <Card>
+            <p className="text-[14px] text-[#667370]">No pending requests.</p>
+          </Card>
+        )}
+      </div>
+      <h2 className="font-display mt-4 text-[16px] font-semibold">Members · {members.length}</h2>
       <div className="mt-2 flex flex-col gap-2">
         {members.map((m) => (
           <Card key={m.membershipId}>

@@ -407,5 +407,56 @@ let worker2Id = "";
   check("reactivated me → 200 leader", back.status === 200 && back.j?.data?.role === "group_leader", `got=${back.status}`);
   cookie = ADMIN_COOKIE;
 }
+// ---- Open-but-guided: public directory, request, approve, decline ----
+{
+  const d = await req("GET", "/api/orgs/public", null, false);
+  check("public directory lists orgs", d.status === 200 && (d.j?.data ?? []).some((o) => o.slug === "grace-pilot"), `got=${d.status}`);
+}
+const joinEmail = `joiner-${Date.now()}@t.co`;
+{
+  const bad = await req("POST", "/api/join", { orgSlug: "nope", name: "Nobody Here", email: joinEmail }, false);
+  check("unknown church → 404", bad.status === 404, `got=${bad.status}`);
+  const r = await req("POST", "/api/join", { orgSlug: "grace-pilot", name: "Joiner", email: joinEmail, message: "visited Sunday" }, false);
+  check("join request → 201", r.status === 201, `got=${r.status}`);
+  const dup = await req("POST", "/api/join", { orgSlug: "grace-pilot", name: "Joiner", email: joinEmail }, false);
+  check("duplicate request → idempotent 200", dup.status === 200, `got=${dup.status}`);
+}
+let joinReqId = "", joinToken = "";
+{
+  const l = await req("GET", "/api/join");
+  const found = (l.j?.data ?? []).find((j) => j.email === joinEmail);
+  check("admin sees request", l.status === 200 && !!found, `got=${l.status}`);
+  joinReqId = found?.id ?? "";
+  const ap = await req("POST", `/api/join/${joinReqId}/approve`, { role: "member" });
+  check("approve → invite token", ap.status === 201 && !!ap.j?.data?.token, `got=${ap.status}`);
+  joinToken = ap.j?.data?.token ?? "";
+  const ap2 = await req("POST", `/api/join/${joinReqId}/approve`, { role: "member" });
+  check("re-approve → 422", ap2.status === 422, `got=${ap2.status}`);
+}
+{
+  const a = await req("POST", `/api/invites/${joinToken}`, { name: "Joiner", password }, false);
+  check("invited joiner activates → 201", a.status === 201, `got=${a.status}`);
+  cookie = "";
+  const si = await req("POST", "/api/auth/sign-in/email", { email: joinEmail, password }, false);
+  check("joiner sign-in → 200", si.status === 200, `got=${si.status}`);
+  const me = await req("GET", "/api/me");
+  check("joiner is member", me.status === 200 && me.j?.data?.role === "member", `got=${me.status}`);
+  cookie = ADMIN_COOKIE;
+}
+{
+  const r = await req("POST", "/api/join", { orgSlug: "grace-pilot", name: "Declined", email: `decline-${Date.now()}@t.co` }, false);
+  check("second request → 201", r.status === 201, `got=${r.status}`);
+  const l = await req("GET", "/api/join");
+  const target = (l.j?.data ?? []).find((j) => j.status === "pending" && j.email.startsWith("decline-"));
+  const dec = await req("POST", `/api/join/${target?.id}/decline`);
+  check("decline → 200", dec.status === 200, `got=${dec.status}`);
+}
+// Email flows (behavior only — delivery is external)
+{
+  const r = await req("POST", "/api/auth/request-password-reset", { email }, false);
+  check("forgot-password known → 200", r.status === 200, `got=${r.status}`);
+  const u = await req("POST", "/api/auth/request-password-reset", { email: "nobody@t.co" }, false);
+  check("forgot-password unknown → 200 (no enumeration)", u.status === 200, `got=${u.status}`);
+}
 console.log(`smoke: pass=${pass} fail=${fail} admin=${adminId ? "created" : "MISSING"}`);
 process.exit(fail ? 1 : 0);

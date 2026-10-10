@@ -57,6 +57,20 @@
       "when": 1791569000000,
       "tag": "0005_group_leads",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791592834670,
+      "tag": "0005_ancient_captain_america",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": 7,
+      "when": 1791590000000,
+      "tag": "0006_join_requests",
+      "breakpoints": true
     }
   ]
 }

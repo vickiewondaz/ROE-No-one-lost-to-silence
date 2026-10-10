@@ -23,7 +23,20 @@ function getInstance(): Instance | null {
       const db = getDb(); // throws on invalid URL → caught below
       instance = betterAuth({
         secret: process.env.BETTER_AUTH_SECRET ?? "roe-pilot-secret-change-me",
-        emailAndPassword: { enabled: true, requireEmailVerification: false },
+        emailAndPassword: {
+          enabled: true,
+          requireEmailVerification: false,
+          sendResetPassword: async ({ user, token }) => {
+            const base =
+              process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+            const { resetPasswordEmail } = await import("./email");
+            const { subject, html } = resetPasswordEmail(
+              `${base}/reset/${token}`
+            );
+            const { sendEmail } = await import("./email");
+            await sendEmail(user.email, subject, html);
+          },
+        },
         database: drizzleAdapter(db, {
           provider: "pg",
           schema: { user: users, session, account, verification },

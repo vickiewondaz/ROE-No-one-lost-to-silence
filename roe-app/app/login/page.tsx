@@ -1,6 +1,7 @@
 "use client";
 // P01 / F01.01 Sign In — Mobbin login + validation pattern, live Better Auth.
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { PrimaryButton, Field, inputCls } from "@/components/ui";
@@ -74,6 +75,12 @@ export default function Login() {
         <PrimaryButton type="submit">
           {busy ? "Signing in…" : "Sign in"}
         </PrimaryButton>
+        <Link
+          href="/forgot"
+          className="text-center text-[14px] font-medium text-[#0F766E]"
+        >
+          Forgot password?
+        </Link>
         <p className="text-center text-[13px] text-[#667370]">
           Pilot access is invite-only. Ask your administrator for an account.
         </p>

@@ -9,7 +9,7 @@ import { NextResponse } from "next/server";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/lib/db/client";
-import { auditLogs, invitations } from "@/lib/db/schema";
+import { auditLogs, invitations, organisations } from "@/lib/db/schema";
 import { requireSession } from "@/lib/session";
 
 const createSchema = z.object({
@@ -53,6 +53,23 @@ export async function POST(req: Request) {
   await db.insert(auditLogs).values({
     orgId: ctx.orgId, actor: ctx.userId, op: "invites:create", ref: row.id, allowed: true,
   });
+  // Best-effort email (WhatsApp link stays primary). Never blocks the invite.
+  {
+    const base = new URL(req.url).origin;
+    const { inviteEmail } = await import("@/lib/email");
+    const { sendEmail } = await import("@/lib/email");
+    const org = await db
+      .select()
+      .from(organisations)
+      .where(eq(organisations.id, ctx.orgId))
+      .limit(1);
+    const { subject, html } = inviteEmail(
+      org[0]?.name ?? "Your church",
+      row.role,
+      `${base}/invite/${token}`
+    );
+    void sendEmail(row.email, subject, html);
+  }
   return NextResponse.json(
     { data: { id: row.id, email: row.email, role: row.role, expiresAt, token } },
     { status: 201 }

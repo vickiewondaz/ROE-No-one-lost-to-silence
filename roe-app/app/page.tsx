@@ -1,5 +1,5 @@
 // ROE opening screen — a doorway, not a brochure (Figma §3.2 public entry).
-// No public signup: team signs in, invitees arrive via invitation links.
+// Entry: team signs in, invitees arrive via links, newcomers request via /join.
 import Image from "next/image";
 import Link from "next/link";
 
@@ -40,6 +40,12 @@ export default function Landing() {
           Have an invitation link? It opens directly — no account needed until
           you activate.
         </p>
+        <Link
+          href="/join"
+          className="tap-target flex items-center justify-center rounded-lg border border-[#E2E8E6] bg-white text-[15px] font-semibold text-[#0F766E]"
+        >
+          New here? Find your church →
+        </Link>
       </div>
 
       <p className="font-mono2 mt-auto pt-8 text-center text-[11px] text-[#667370]">

@@ -241,6 +241,22 @@ export const groupLeads = pgTable("group_leads", {
     .notNull()
     .references(() => groups.id, { onDelete: "cascade" }),
 });
+// Public join requests (open-but-guided): anyone can ask; admins approve.
+// Approval mints a standard invitation (same hashed/single-use/7d rules).
+// Throttles enforced in the route (per-email + per-org daily caps).
+export const joinRequests = pgTable("join_requests", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orgId: uuid("org_id").notNull(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  message: text("message"),
+  status: text("status").notNull().default("pending"),
+  decidedBy: uuid("decided_by"),
+  decidedAt: timestamp("decided_at"),
+  inviteId: uuid("invite_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
 // Team invitations (F01.09–F01.12). Token stored hashed, single-use, 7d expiry.
 // Invite-only pilot: roles worker|group_leader|member|care (never admin).
 export const invitations = pgTable("invitations", {
