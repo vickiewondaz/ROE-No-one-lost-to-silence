@@ -20,7 +20,7 @@ export function Shell({
     <div className="mx-auto flex min-h-full w-full max-w-[480px] flex-col bg-[#F8FAF9] lg:max-w-5xl lg:flex-row">
       {/* Desktop rail (lg+): sidebar navigation, same destinations as bottom nav */}
       <aside className="hidden w-60 shrink-0 flex-col gap-1 border-r border-[#E2E8E6] bg-white p-4 lg:flex">
-        <p className="font-mono2 px-2 text-[11px] uppercase tracking-widest text-[#667370]">
+        <p className="font-mono2 whitespace-nowrap px-2 text-[11px] uppercase tracking-widest text-[#667370]">
           ROE · No one lost to silence
         </p>
         <div className="mt-3 flex flex-col gap-1">
