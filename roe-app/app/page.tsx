@@ -30,12 +30,6 @@ export default function Landing() {
           className="rounded-2xl bg-white object-contain"
           priority
         />
-        <p className="font-mono2 mt-4 text-[11px] uppercase tracking-widest text-[#6B7280]">
-          ROE
-        </p>
-        <h1 className="font-display mt-1 text-[32px] font-bold leading-tight">
-          No one lost to silence.
-        </h1>
       </div>
 
       <div className="mt-8 flex flex-col gap-2">
