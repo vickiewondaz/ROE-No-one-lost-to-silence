@@ -103,6 +103,36 @@ jobs:
         run: |
           /tmp/gradle-8.13/bin/gradle --no-daemon assembleRelease bundleRelease
 
+      - name: Validate APK packaging (manifest, launchable, icons)
+        run: |
+          APK=$(ls app/build/outputs/apk/release/*-release.apk | head -n 1)
+          AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt 2>/dev/null | sort -V | tail -n 1)
+          test -x "$AAPT" || { echo "aapt not found"; exit 1; }
+          BADGING=$("$AAPT" dump badging "$APK")
+          echo "$BADGING" | grep -E "^package:|^launchable-activity:|^sdkVersion:|^targetSdkVersion:|^application-label:" || true
+          echo "$BADGING" | grep -q "package: name='app.netlify.roe_pilot.twa'" || { echo "FAIL: package name"; exit 1; }
+          echo "$BADGING" | grep -q "launchable-activity: name='com.google.androidbrowserhelper.trusted.LauncherActivity'" || { echo "FAIL: no launchable TWA activity"; exit 1; }
+          echo "$BADGING" | grep -q "application-debuggable" && { echo "FAIL: release is debuggable"; exit 1; } || true
+          echo "$BADGING" | grep -q "targetSdkVersion:'35'" || { echo "FAIL: targetSdk"; exit 1; }
+          python3 - <<'EOF'
+          import json, re, struct, sys
+          # asset_statements in res/values must unescape to a valid DAL statement list
+          src = open('app/src/main/res/values/strings.xml', encoding='utf-8').read()
+          m = re.search(r'<string name="asset_statements">(.*?)</string>', src, re.S)
+          assert m, 'asset_statements missing'
+          stmts = json.loads(m.group(1).replace('\\"', '"'))
+          assert stmts[0]['target']['site'] == 'https://roe-pilot.netlify.app', 'DAL site mismatch'
+          # every launcher PNG must be a valid square PNG
+          import glob, os
+          for p in sorted(glob.glob('app/src/main/res/mipmap-*/ic_launcher*.png')):
+              with open(p, 'rb') as f:
+                  head = f.read(24)
+              assert head[:8] == b'\x89PNG\r\n\x1a\n', f'{p} not a PNG'
+              w, h = struct.unpack('>II', head[16:24])
+              assert w == h and w >= 48, f'{p} bad size {w}x{h}'
+          print('packaging validation OK')
+          EOF
+
       - name: Verify signatures (v1 + v2) and fingerprint
         run: |
           APK=$(ls app/build/outputs/apk/release/*-release.apk | head -n 1)
@@ -126,8 +156,8 @@ jobs:
       - name: Create GitHub Release with APK + AAB
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: android-v1.0.1+${{ github.run_number }}
-          name: ROE Android v1.0.1 (build ${{ github.run_number }})
+          tag_name: android-v1.0.2+${{ github.run_number }}
+          name: ROE Android v1.0.2 (build ${{ github.run_number }})
           body: |
             Production Android release for ROE ("No one lost to silence").
 
