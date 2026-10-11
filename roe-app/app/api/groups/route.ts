@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   const s = await requireSession();
   if ("error" in s) return NextResponse.json({ error: s.message }, { status: s.error });
   const { ctx } = s;
-  if (ctx.role !== "admin") {
+  if (!["admin", "senior"].includes(ctx.role)) {
     await getDb().insert(auditLogs).values({
       orgId: ctx.orgId, actor: ctx.userId, op: "groups:create", allowed: false,
     });

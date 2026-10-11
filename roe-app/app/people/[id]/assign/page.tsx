@@ -4,6 +4,8 @@ import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shell, Card, Field, PrimaryButton, inputCls } from "@/components/ui";
 import { loadPeople, savePeople, loadActions, saveActions } from "@/lib/data";
+import { roleLabel } from "@/lib/role-label";
+import { markOfflineSaved } from "@/lib/offline";
 
 interface Member {
   id: string;
@@ -34,13 +36,17 @@ export default function Assign({
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/api/users", { credentials: "same-origin" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => {
-        if (j?.data?.length) {
-          setMembers(j.data as Member[]);
-          setWorkerId((j.data as Member[])[0].id);
-        }
+    // Default owner is YOU (the signed-in worker) — never silently the first
+    // name on the team list. Changing owner is always an explicit choice.
+    Promise.all([
+      fetch("/api/users", { credentials: "same-origin" }).then((r) => (r.ok ? r.json() : null)),
+      fetch("/api/me", { credentials: "same-origin" }).then((r) => (r.ok ? r.json() : null)),
+    ])
+      .then(([u, me]) => {
+        const list = Array.isArray(u?.data) ? (u.data as Member[]) : [];
+        if (list.length) setMembers(list);
+        const mine = me?.data?.userId as string | undefined;
+        if (mine && list.some((m) => m.id === mine)) setWorkerId(mine);
       })
       .catch(() => {});
   }, []);
@@ -60,7 +66,12 @@ export default function Assign({
 
   async function save() {
     setError("");
+    if (!workerId) {
+      setError("Choose who owns this follow-up.");
+      return;
+    }
     if (members && workerId) {
+      let networkFailed = false;
       try {
         const r = await fetch("/api/actions", {
           method: "POST",
@@ -82,7 +93,10 @@ export default function Assign({
           setError(j.error);
           return;
         }
-      } catch {}
+      } catch {
+        networkFailed = true;
+      }
+      if (networkFailed) markOfflineSaved();
     }
     localSave();
   }
@@ -94,10 +108,10 @@ export default function Assign({
   } catch {}
 
   return (
-    <Shell title="Assign follow-up" back={`/people/${id}`}>
+    <Shell title="Assign follow-up" back={`/people/${id}`} tab="people">
       <Card>
         <p className="font-display font-semibold">{personName}</p>
-        <p className="text-[13px] text-[#667370]">
+        <p className="text-[13px] text-[#6B7280]">
           Clear owner + due date. No one without an owner for &gt;24h.
         </p>
       </Card>
@@ -110,12 +124,13 @@ export default function Assign({
             <option>Introduce to group</option>
           </select>
         </Field>
-        <Field label="Assigned worker" error={error}>
+        <Field label="Assigned worker" hint="Defaults to you — change it only when someone else truly owns it." error={error}>
           {members ? (
             <select className={inputCls} value={workerId} onChange={(e) => setWorkerId(e.target.value)}>
+              <option value="">Choose a worker…</option>
               {members.map((m) => (
                 <option key={m.id} value={m.id}>
-                  {m.name} · {m.role}
+                  {m.name} · {roleLabel(m.role)}
                 </option>
               ))}
             </select>
@@ -135,7 +150,11 @@ export default function Assign({
             <option>In 7 days</option>
           </select>
         </Field>
-        <PrimaryButton onClick={save}>Save assignment</PrimaryButton>
+        <PrimaryButton onClick={save}>
+          {members && workerId
+            ? `Assign to ${members.find((m) => m.id === workerId)?.name ?? "worker"}`
+            : "Save assignment"}
+        </PrimaryButton>
       </div>
     </Shell>
   );

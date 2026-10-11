@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   const s = await requireSession();
   if ("error" in s) return NextResponse.json({ error: s.message }, { status: s.error });
   const { ctx } = s;
-  if (ctx.role !== "admin") {
+  if (!["admin", "senior"].includes(ctx.role)) {
     await getDb().insert(auditLogs).values({
       orgId: ctx.orgId, actor: ctx.userId, op: "invites:create", allowed: false,
     });
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
       .where(eq(organisations.id, ctx.orgId))
       .limit(1);
     const { subject, html } = inviteEmail(
-      org[0]?.name ?? "Your church",
+      org[0]?.name ?? "Your community",
       row.role,
       `${base}/invite/${token}`
     );
@@ -82,7 +82,7 @@ export async function GET() {
   const s = await requireSession();
   if ("error" in s) return NextResponse.json({ error: s.message }, { status: s.error });
   const { ctx } = s;
-  if (ctx.role !== "admin")
+  if (!["admin", "senior"].includes(ctx.role))
     return NextResponse.json({ error: "Not permitted." }, { status: 403 });
   const db = getDb();
   const rows = await db.transaction(async (tx) => {
@@ -113,7 +113,7 @@ export async function DELETE(req: Request) {
   const s = await requireSession();
   if ("error" in s) return NextResponse.json({ error: s.message }, { status: s.error });
   const { ctx } = s;
-  if (ctx.role !== "admin")
+  if (!["admin", "senior"].includes(ctx.role))
     return NextResponse.json({ error: "Not permitted." }, { status: 403 });
   const id = new URL(req.url).searchParams.get("id") ?? "";
   const db = getDb();

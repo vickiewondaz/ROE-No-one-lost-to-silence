@@ -7,7 +7,8 @@
 
 ## What ROE is (30 seconds)
 
-ROE ("No one lost to silence") is a web app that helps churches follow up with
+ROE ("No one lost to silence") is a web app that helps churches, fellowships and
+faith-based organisations follow up with
 newcomers and members: capture a person → assign a worker → follow up → record
 what happened → connect them to a group → always know the next step. Mobile-first,
 calm, human tone. Tech: Next.js 16 + TypeScript + Tailwind + Drizzle ORM +
@@ -19,7 +20,7 @@ Better Auth + Postgres (Neon), hosted on Netlify.
 - GitHub: `vickiewondaz/ROE-No-one-lost-to-silence`, branch `main` (clean, in sync)
 - App code: `roe-app/` (routes in `app/`, shared UI in `components/`, DB schema in `lib/db/schema.ts`)
 - Live site: `https://roe-pilot.netlify.app` (Netlify project `roe-app`, team `vickie2`)
-- Database: Neon project `roe-pilot`, branch `production`, PG 18 (22 tables, RLS on)
+- Database: Neon project `roe-pilot`, branch `production`, PG 18 (23 tables, RLS on)
 - Docs: `ROE - *.docx` (PRD/TRD/design), `ROE - IMPLEMENTATION PLAN.md`, `roe-app/RUNBOOK.md`
 - Vercel project `vickie2/roe-app` exists as FALLBACK ONLY — it has an SSO wall; do not use it for users.
 
@@ -36,12 +37,20 @@ Better Auth + Postgres (Neon), hosted on Netlify.
 - Plus: invites (hashed, single-use, 7d) + request-to-join with throttles, admin console
   (team/invites/audit/roles/leads), dark platform tier (orgs, first-admin invites, suspend),
   password change + recovery email, celebrations (milestones, upcoming, acknowledge flow),
-  notifications, member self-service (own record), AI test console (super-admin only).
-- Proof: smoke suite `scripts/smoke.mjs` (~102 checks, all green locally and on prod);
+  notifications, member self-service (own record, incl. names), AI test console (super-admin only),
+  service-days calendar (admin-managed, on all dashboards), typeahead group picker
+  over the 65-team directory, suspend confirms + masked invite links on both dashboards.
+- Visual system: Figma v1 implemented (teal-600 primary, Inter throughout, lucide
+  icons, framer-motion page transitions + tab pill, rebuilt primitives in
+  `components/ui.tsx` + `components/nav.tsx`).
+- Proof: smoke suite `scripts/smoke.mjs` (~120 checks incl. self-service PATCH, org profile, services CRUD);
   unit `npm test` (20+ green); roles matrix `scripts/roles.mjs` 10/10 on seeded demo org;
   RLS negatives PASS on every migrate run. `npm run build` green, `tsc` clean.
+- Roles: `senior` ≈ `admin` for org management (reads + writes) — admin UI admits
+  senior and every API gate honours it; `care`/`member` stay scoped, platform stays separate.
 - Prod DB holds: orgs `grace-pilot` + `cac`, 2 users (both the owner: admin + super-admin),
-  Young Adults + General Fellowship groups, zero test residue (cleaned repeatedly).
+  65-team directory + General Fellowship in grace-pilot, owner WhatsApp set on
+  grace-pilot for tap-to-chat tests, zero test residue (cleaned repeatedly).
 - AI posture: flagged OFF for users; local OmniRoute gateway + Google/OpenRouter connected
   and tested; Hugging Face token exists but account has zero credits (parked);
   free-pools-only policy, no paid spend without budget-cap code (unbuilt).
@@ -84,7 +93,7 @@ Better Auth + Postgres (Neon), hosted on Netlify.
 
 1. Prod deploy catch-up (dashboard trigger) → verify → clean.
 2. Owner tasks: password self-change, token revocations, HF credits decision.
-3. Pilot: recruit church #1, 4-week concierge, metrics vs kill bar (>70% owner<24h, >50% contact<7d), price ladder.
+3. Pilot: recruit pilot community #1 (church, fellowship or faith-based org), 4-week concierge, metrics vs kill bar (>70% owner<24h, >50% contact<7d), price ladder.
 4. Build queue: roles depth tail, desktop follow-through, notifications polish, TRD/plan refresh.
 5. Gated (do NOT start early): worker-facing AI, care workflows, celebrations auto-send,
    analytics, multi-campus, WhatsApp Business API.

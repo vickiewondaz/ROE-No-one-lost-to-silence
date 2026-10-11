@@ -68,7 +68,7 @@ export function welcomeMessagePrompt(firstName: string, context: string): { role
   return [
     {
       role: "user",
-      content: `Write a short, warm church welcome message for newcomer ${firstName}. Context: ${context}. Rules: under 60 words, personal not generic, invite (don't pressure) one next step, no spiritual judgments, no assumptions about their life. Plain text only.`,
+      content: `Write a short, warm faith-community welcome message for newcomer ${firstName}. Context: ${context}. Rules: under 60 words, personal not generic, invite (don't pressure) one next step, no spiritual judgments, no assumptions about their life. Plain text only.`,
     },
   ];
 }

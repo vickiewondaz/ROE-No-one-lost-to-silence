@@ -23,13 +23,13 @@ function promptFor(kind: string, firstName: string, context: string) {
     return [
       {
         role: "user" as const,
-        content: `A church follow-up worker recorded this about newcomer ${firstName}: "${context}". Suggest ONE concrete next action (under 25 words) plus one line starting with "Because: " explaining it from recorded facts only. Never judge the person or guess why they were away.`,
+        content: `A faith-community follow-up worker recorded this about newcomer ${firstName}: "${context}". Suggest ONE concrete next action (under 25 words) plus one line starting with "Because: " explaining it from recorded facts only. Never judge the person or guess why they were away.`,
       },
     ];
   return [
     {
       role: "user" as const,
-      content: `Summarize these follow-up notes about newcomer ${firstName} into 2 short factual lines for a church worker handover: "${context}". Facts only, no judgments, no invented details.`,
+        content: `Summarize these follow-up notes about newcomer ${firstName} into 2 short factual lines for a community worker handover: "${context}". Facts only, no judgments, no invented details.`,
     },
   ];
 }

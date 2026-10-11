@@ -5,10 +5,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shell, Card, Field, PrimaryButton, inputCls } from "@/components/ui";
 import { loadPeople, savePeople } from "@/lib/data";
+import { markOfflineSaved } from "@/lib/offline";
 
 export default function NewPerson() {
   const router = useRouter();
   const [first, setFirst] = useState("");
+  const [last, setLast] = useState("");
   const [phone, setPhone] = useState("");
   const [channel, setChannel] = useState("WhatsApp");
   const [error, setError] = useState("");
@@ -18,8 +20,11 @@ export default function NewPerson() {
     const digits = phone.replace(/\D/g, "");
     if (first.trim().length < 2) return setError("Enter a first name.");
     if (digits.length < 7 || digits.length > 15)
-      return setError("Enter a valid phone. Check digits and try again.");
-    // Live first (session cookie); fall back to local demo store offline/501.
+      return setError("Enter a valid phone number.");
+    // Live first (session cookie); fall back to local store only when the
+    // network itself failed (offline) or demo mode (signed out). Offline saves
+    // are flagged loud — the created page shows "device only, not sent".
+    let networkFailed = false;
     try {
       const r = await fetch("/api/people", {
         method: "POST",
@@ -27,6 +32,7 @@ export default function NewPerson() {
         credentials: "same-origin",
         body: JSON.stringify({
           firstName: first.trim(),
+          lastName: last.trim(),
           phone: phone.trim(),
           channel,
           consentContact: true,
@@ -45,8 +51,9 @@ export default function NewPerson() {
         return;
       }
     } catch {
-      // fall through to local demo save
+      networkFailed = true;
     }
+    if (networkFailed) markOfflineSaved();
     const people = loadPeople();
     const dup = people.find((p) =>
       p.phone.replace(/\D/g, "").endsWith(digits.slice(-7))
@@ -56,7 +63,7 @@ export default function NewPerson() {
       {
         id,
         firstName: first.trim(),
-        lastName: "",
+        lastName: last.trim(),
         phone: phone.trim(),
         channel: channel as never,
         journey: "Assigned",
@@ -75,7 +82,7 @@ export default function NewPerson() {
   }
 
   return (
-    <Shell title="New person" back="/people">
+    <Shell title="New person" back="/people" tab="people">
       <form onSubmit={save} className="flex flex-col gap-4">
         <Field label="First name" error={error.includes("first") ? error : ""}>
           <input
@@ -83,6 +90,16 @@ export default function NewPerson() {
             value={first}
             onChange={(e) => setFirst(e.target.value)}
             placeholder="e.g. Sarah"
+            autoComplete="given-name"
+          />
+        </Field>
+        <Field label="Last name (optional)">
+          <input
+            className={inputCls}
+            value={last}
+            onChange={(e) => setLast(e.target.value)}
+            placeholder="e.g. Johnson"
+            autoComplete="family-name"
           />
         </Field>
         <Field
@@ -111,7 +128,7 @@ export default function NewPerson() {
           </select>
         </Field>
         <Card>
-          <p className="text-[13px] text-[#667370]">
+          <p className="text-[13px] text-[#6B7280]">
             Optional later: interests, group, how they connected, notes.
             Progressive disclosure — don&apos;t ask everything now.
           </p>

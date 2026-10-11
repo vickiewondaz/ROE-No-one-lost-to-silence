@@ -12,13 +12,16 @@ import { personInScope } from "@/lib/connections";
 import { requireSession } from "@/lib/session";
 import { can } from "@/lib/authz";
 
+// Phone rule shared with /api/join + PATCH: 7–15 digits, same message.
+export function validPhone(v: string): boolean {
+  const digits = v.replace(/\D/g, "");
+  return digits.length >= 7 && digits.length <= 15;
+}
+
 const createSchema = z.object({
   firstName: z.string().trim().min(2).max(60),
   lastName: z.string().trim().max(60).optional().default(""),
-  phone: z
-    .string()
-    .trim()
-    .regex(/^[+0-9][0-9 ()-]{6,18}$/, "Enter a valid phone."),
+  phone: z.string().trim().max(20).refine(validPhone, "Enter a valid phone number."),
   channel: z.enum(["Call", "WhatsApp", "Visit", "Other"]),
   interests: z.string().trim().max(280).optional().default(""),
   consentContact: z.literal(true, {

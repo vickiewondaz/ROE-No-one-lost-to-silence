@@ -19,7 +19,7 @@ async function adminOnly(): Promise<
   if (!process.env.DATABASE_URL) return { route: "nodb" as const };
   const s = await requireSession();
   if ("error" in s) return { route: s.error, message: s.message };
-  if (s.ctx.role !== "admin") {
+  if (!["admin", "senior"].includes(s.ctx.role)) {
     await getDb().insert(auditLogs).values({
       orgId: s.ctx.orgId, actor: s.ctx.userId, op: "groups:leads", allowed: false,
     });

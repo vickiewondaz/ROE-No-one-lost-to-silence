@@ -9,13 +9,26 @@ import { getDb } from "@/lib/db/client";
 import { auditLogs, joinRequests, organisations } from "@/lib/db/schema";
 import { requireSession } from "@/lib/session";
 
-const requestSchema = z.object({
-  orgSlug: z.string().trim().toLowerCase().min(2).max(40),
-  name: z.string().trim().min(2).max(60),
-  email: z.string().email(),
-  phone: z.string().trim().max(20).optional().default(""),
-  message: z.string().trim().max(500).optional().default(""),
-});
+// Phone-first: phone required (7–15 digits), email optional.
+// At least one contact channel must be present (phone always, email if given).
+const requestSchema = z
+  .object({
+    orgSlug: z.string().trim().toLowerCase().min(2).max(40),
+    name: z.string().trim().min(2).max(60),
+    email: z
+      .string()
+      .trim()
+      .max(120)
+      .optional()
+      .default("")
+      .refine((v) => v === "" || /.+@.+\..+/.test(v), "Enter a valid email."),
+    phone: z.string().trim().max(20).default(""),
+    message: z.string().trim().max(500).optional().default(""),
+  })
+  .refine(
+    (v) => v.phone.replace(/\D/g, "").length >= 7 && v.phone.replace(/\D/g, "").length <= 15,
+    { message: "Enter a valid phone number.", path: ["phone"] }
+  );
 
 export async function POST(req: Request) {
   if (!process.env.DATABASE_URL)
@@ -31,25 +44,49 @@ export async function POST(req: Request) {
     .where(eq(organisations.slug, v.orgSlug))
     .limit(1);
   if (!org[0] || org[0].status !== "active")
-    return NextResponse.json({ error: "Church not found." }, { status: 404 });
+    return NextResponse.json({ error: "Community not found." }, { status: 404 });
   const dayAgo = new Date(Date.now() - 86400000);
-  const mine = await db
-    .select()
-    .from(joinRequests)
-    .where(
-      and(
-        eq(joinRequests.orgId, org[0].id),
-        eq(joinRequests.email, v.email.toLowerCase()),
-        eq(joinRequests.status, "pending"),
-        gte(joinRequests.createdAt, dayAgo)
+  const emailNorm = v.email.trim().toLowerCase();
+  const phoneNorm = v.phone.trim();
+  // Duplicate guard: same phone (preferred) or same email within 24h.
+  if (phoneNorm) {
+    const minePhone = await db
+      .select()
+      .from(joinRequests)
+      .where(
+        and(
+          eq(joinRequests.orgId, org[0].id),
+          eq(joinRequests.phone, phoneNorm),
+          eq(joinRequests.status, "pending"),
+          gte(joinRequests.createdAt, dayAgo)
+        )
       )
-    )
-    .limit(1);
-  if (mine[0])
-    return NextResponse.json(
-      { data: { received: true, note: "Request already received — your coordinator will be in touch." } },
-      { status: 200 }
-    );
+      .limit(1);
+    if (minePhone[0])
+      return NextResponse.json(
+        { data: { received: true, note: "Request already received — your coordinator will be in touch." } },
+        { status: 200 }
+      );
+  }
+  if (emailNorm) {
+    const mine = await db
+      .select()
+      .from(joinRequests)
+      .where(
+        and(
+          eq(joinRequests.orgId, org[0].id),
+          eq(joinRequests.email, emailNorm),
+          eq(joinRequests.status, "pending"),
+          gte(joinRequests.createdAt, dayAgo)
+        )
+      )
+      .limit(1);
+    if (mine[0])
+      return NextResponse.json(
+        { data: { received: true, note: "Request already received — your coordinator will be in touch." } },
+        { status: 200 }
+      );
+  }
   const orgDay = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(joinRequests)
@@ -59,8 +96,8 @@ export async function POST(req: Request) {
   await db.insert(joinRequests).values({
     orgId: org[0].id,
     name: v.name,
-    email: v.email.toLowerCase(),
-    phone: v.phone || null,
+    email: emailNorm || null,
+    phone: phoneNorm || null,
     message: v.message || null,
     status: "pending",
   });
@@ -76,7 +113,7 @@ export async function GET() {
   const s = await requireSession();
   if ("error" in s) return NextResponse.json({ error: s.message }, { status: s.error });
   const { ctx } = s;
-  if (ctx.role !== "admin") {
+  if (!["admin", "senior"].includes(ctx.role)) {
     await getDb().insert(auditLogs).values({
       orgId: ctx.orgId, actor: ctx.userId, op: "join:list", allowed: false,
     });
@@ -96,7 +133,7 @@ export async function GET() {
     data: rows.map((r) => ({
       id: r.id,
       name: r.name,
-      email: r.email,
+      email: r.email ?? "",
       phone: r.phone ?? "",
       message: r.message ?? "",
       status: r.status,

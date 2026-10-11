@@ -65,27 +65,30 @@ export function can(
   const own = !!rec?.ownerId && rec.ownerId === auth.ownPersonId;
 
   switch (op) {
+    // Senior manages alongside admin everywhere (org reads + writes).
+    // The admin UI admits senior; every gate below must honour that promise.
     case "people:create":
-      return ["admin", "worker", "group_leader", "care"].includes(auth.role);
+      return ["admin", "senior", "worker", "group_leader", "care"].includes(auth.role);
     case "people:read":
       if (auth.role === "admin" || auth.role === "senior") return true;
       if (auth.role === "member") return own;
       return assigned || inLedGroup;
     case "people:update":
       if (auth.role === "member") return own;
-      return assigned || inLedGroup || auth.role === "admin";
+      return assigned || inLedGroup || auth.role === "admin" || auth.role === "senior";
     case "actions:create":
-      return ["admin", "worker", "group_leader"].includes(auth.role);
+      return ["admin", "senior", "worker", "group_leader"].includes(auth.role);
     case "actions:transition":
-      return ["admin", "worker", "group_leader"].includes(auth.role);
+      return ["admin", "senior", "worker", "group_leader"].includes(auth.role);
     case "interactions:create":
       if (auth.role === "member") return false;
-      return assigned || inLedGroup || auth.role === "admin";
+      return assigned || inLedGroup || auth.role === "admin" || auth.role === "senior";
     case "connections:write":
       return (
         auth.role === "worker" ||
         auth.role === "group_leader" ||
-        auth.role === "admin"
+        auth.role === "admin" ||
+        auth.role === "senior"
       );
     case "notifications:read":
       return own || auth.userId === rec?.ownerId;

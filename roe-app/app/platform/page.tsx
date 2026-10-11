@@ -1,5 +1,5 @@
 "use client";
-// /platform — control plane. Deliberately NOT church-styled: dark slate,
+// /platform — control plane. Deliberately NOT community-styled: dark slate,
 // "PLATFORM" labelling everywhere, counts only, zero member data on screen.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,18 +19,38 @@ export default function Platform() {
   const router = useRouter();
   const [denied, setDenied] = useState(false);
   const [orgs, setOrgs] = useState<Org[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [slugTouched, setSlugTouched] = useState(false);
   const [error, setError] = useState("");
 
-  async function refresh() {
-    const r = await fetch("/api/platform/orgs", { credentials: "same-origin" });
-    if (r.status === 403 || r.status === 401) {
-      setDenied(true);
-      return;
+  function onName(v: string) {
+    setName(v);
+    // Draft the web name from the organisation name until the human edits it.
+    if (!slugTouched) {
+      setSlug(
+        v
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .slice(0, 40)
+      );
     }
-    const j = await r.json().catch(() => null);
-    if (Array.isArray(j?.data)) setOrgs(j.data as Org[]);
+  }
+
+  async function refresh() {
+    try {
+      const r = await fetch("/api/platform/orgs", { credentials: "same-origin" });
+      if (r.status === 403 || r.status === 401) {
+        setDenied(true);
+        return;
+      }
+      const j = await r.json().catch(() => null);
+      if (Array.isArray(j?.data)) setOrgs(j.data as Org[]);
+    } finally {
+      setLoaded(true);
+    }
   }
 
   useEffect(() => {
@@ -57,6 +77,7 @@ export default function Platform() {
       if (r.ok && j?.data?.id) {
         setName("");
         setSlug("");
+        setSlugTouched(false);
         router.push(`/platform/${j.data.id}`);
         return;
       }
@@ -71,8 +92,8 @@ export default function Platform() {
       <Shell title="Platform" back="/more" tab="more">
         <Card>
           <p className="font-medium">Platform only.</p>
-          <p className="text-[13px] text-[#667370]">
-            This area governs organisations, not people. It is not for church teams.
+          <p className="text-[13px] text-[#6B7280]">
+            This area governs organisations, not people. It is not for community teams.
           </p>
         </Card>
       </Shell>
@@ -87,6 +108,18 @@ export default function Platform() {
         <p className="font-display text-[18px] font-semibold">Control plane — counts only, never member data.</p>
       </div>
       <h2 className="font-display mt-4 text-[16px] font-semibold">Organisations · {orgs.length}</h2>
+      {!loaded && (
+        <Card>
+          <p className="text-[14px] text-[#6B7280]">Loading organisations…</p>
+        </Card>
+      )}
+      {loaded && orgs.length === 0 && (
+        <Card>
+          <p className="text-[14px] text-[#6B7280]">
+            No organisations yet — create the first one below, then invite its admin.
+          </p>
+        </Card>
+      )}
       <div className="mt-2 flex flex-col gap-2">
         {orgs.map((o) => (
           <Link key={o.id} href={`/platform/${o.id}`}>
@@ -101,7 +134,7 @@ export default function Platform() {
                   {o.status}
                 </span>
               </div>
-              <p className="font-mono2 mt-1 text-[12px] text-[#667370]">
+              <p className="font-mono2 mt-1 text-[12px] text-[#6B7280]">
                 {o.slug} · {o.users} team · {o.people} people records
               </p>
             </Card>
@@ -109,16 +142,24 @@ export default function Platform() {
         ))}
       </div>
       <div className="mt-3 flex flex-col gap-2">
-        <Link href="/platform/ai-test" className="tap-target rounded-lg border border-[#E2E8E6] bg-white py-3 text-center text-[14px] font-medium">
+        <Link href="/platform/ai-test" className="tap-target rounded-lg border border-[#E5E7EB] bg-white py-3 text-center text-[14px] font-medium">
           AI test console →
         </Link>
       </div>
       <h2 className="font-display mt-4 text-[16px] font-semibold">New organisation</h2>      <div className="mt-2 flex flex-col gap-3">
-        <Field label="Church / fellowship name">
-          <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Riverside Chapel" />
+        <Field label="Organisation name" hint="A church, fellowship or faith-based organisation.">
+          <input className={inputCls} value={name} onChange={(e) => onName(e.target.value)} placeholder="e.g. Riverside Chapel" />
         </Field>
-        <Field label="Web name (slug)" hint="Lowercase letters, numbers, hyphens." error={error}>
-          <input className={inputCls} value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="e.g. riverside-chapel" />
+        <Field label="Web name (slug)" hint="Drafted from the name — edit if you like. Lowercase letters, numbers, hyphens." error={error}>
+          <input
+            className={inputCls}
+            value={slug}
+            onChange={(e) => {
+              setSlug(e.target.value);
+              setSlugTouched(true);
+            }}
+            placeholder="e.g. riverside-chapel"
+          />
         </Field>
         <PrimaryButton onClick={create}>Create organisation → invite its admin next</PrimaryButton>
       </div>

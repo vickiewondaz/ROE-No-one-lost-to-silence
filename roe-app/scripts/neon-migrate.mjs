@@ -61,6 +61,11 @@ await runFile("drizzle/0004_platform.sql");
 await runFile("drizzle/0005_group_leads.sql");
 await runFile("drizzle/0006_join_requests.sql");
 await runFile("drizzle/0007_celebrations.sql");
+await runFile("drizzle/0008_org_branding.sql");
+await runFile("drizzle/0009_group_directory.sql");
+await runFile("drizzle/0010_group_keywords.sql");
+await runFile("drizzle/0011_services.sql");
+await runFile("drizzle/0012_inclusive_copy.sql");
 await runFile("drizzle/seed.sql");
 
 // 2. Least-privilege role for negative tests (no password; reached via SET ROLE)

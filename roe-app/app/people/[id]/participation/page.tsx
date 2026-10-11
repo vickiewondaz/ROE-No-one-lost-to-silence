@@ -4,7 +4,9 @@
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shell, Card, Field, PrimaryButton, inputCls } from "@/components/ui";
+import OfflineBanner from "@/components/offline-banner";
 import { loadPeople, savePeople } from "@/lib/data";
+import { markOfflineSaved } from "@/lib/offline";
 
 const OPTIONS = [
   { label: "Attended — welcomed", result: "attended" },
@@ -37,6 +39,8 @@ export default function Participation({
   }, [id]);
 
   function localSave() {
+    // Local fallback never invents a group — it only advances the journey the
+    // worker just witnessed. The real group lands via the server record.
     const confirmed = outcome.startsWith("Attended");
     savePeople(
       loadPeople().map((p) =>
@@ -44,7 +48,6 @@ export default function Participation({
           ? {
               ...p,
               journey: confirmed ? ("Connected" as const) : ("Connecting" as const),
-              group: confirmed ? "Young Adults" : p.group,
               nextAction: "Set next action",
             }
           : p
@@ -57,6 +60,7 @@ export default function Participation({
     setError("");
     const result = OPTIONS.find((o) => o.label === outcome)?.result ?? "not-attended";
     if (connId) {
+      let networkFailed = false;
       try {
         const r1 = await fetch(`/api/connections/${connId}/outcome`, {
           method: "POST",
@@ -82,19 +86,23 @@ export default function Participation({
         }
         setDone({ attended: result === "attended", text: outcome });
         return;
-      } catch {}
+      } catch {
+        networkFailed = true;
+      }
+      if (networkFailed) markOfflineSaved();
     }
     localSave();
   }
 
   if (done)
     return (
-      <Shell title="Connection confirmed">
+      <Shell title="Connection confirmed" tab="people">
+        <OfflineBanner />
         <Card>
           <p className="font-display text-[18px] font-semibold">
             {done.attended ? "✓ Connection recorded" : "✓ Outcome recorded"}
           </p>
-          <p className="mt-1 text-[14px] text-[#667370]">
+          <p className="mt-1 text-[14px] text-[#6B7280]">
             {done.text}.{" "}
             {done.attended
               ? "Participation is recorded — belonging grows over time, not in one visit."
@@ -108,7 +116,7 @@ export default function Participation({
     );
 
   return (
-    <Shell title="First participation" back={`/people/${id}/suggest`}>
+    <Shell title="First participation" back={`/people/${id}`} tab="people">
       <div className="flex flex-col gap-4">
         {!connId && (
           <p className="rounded-lg bg-[#DBEAFE] p-2 text-[12px] text-[#1E3A8A]">

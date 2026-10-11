@@ -6,10 +6,10 @@ import { useState } from "react";
 export function celebrationText(type: string, name: string): string {
   const first = name.split(" ")[0] || "friend";
   if (type === "anniversary")
-    return `Happy anniversary, ${first}! Your church family celebrates with you today — wishing you many more years of joy together.`;
+    return `Happy anniversary, ${first}! Your faith community celebrates with you today — wishing you many more years of joy together.`;
   if (type === "milestone")
     return `Congratulations, ${first}! We're cheering you on today and thanking God for this milestone with you.`;
-  return `Happy birthday, ${first}! Your church family is thinking of you today — wishing you joy, health, and every blessing in the year ahead.`;
+  return `Happy birthday, ${first}! Your faith community is thinking of you today — wishing you joy, health, and every blessing in the year ahead.`;
 }
 
 const CHANNELS = ["WhatsApp", "Call", "Visit", "In person"];
@@ -58,7 +58,7 @@ export function CelebrateActions({
 
   return (
     <div className="mt-2 rounded-lg bg-[#F8FAF9] p-2.5">
-      <p className="text-[13px] italic text-[#17201F]">“{text}”</p>
+      <p className="text-[13px] italic text-[#111827]">“{text}”</p>
       <div className="mt-2 flex gap-2">
         <button
           type="button"
@@ -67,7 +67,7 @@ export function CelebrateActions({
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
           }}
-          className="tap-target flex-1 rounded-lg border border-[#E2E8E6] bg-white text-[13px] font-medium"
+          className="tap-target flex-1 rounded-lg border border-[#E5E7EB] bg-white text-[13px] font-medium"
         >
           {copied ? "Copied ✓" : "Copy text"}
         </button>
@@ -75,7 +75,7 @@ export function CelebrateActions({
           <button
             type="button"
             onClick={() => setPicking(true)}
-            className="tap-target flex-1 rounded-lg bg-[#0F766E] text-[13px] font-semibold text-white"
+            className="tap-target flex-1 rounded-lg bg-[#0D9488] text-[13px] font-semibold text-white"
           >
             Mark greeted ✓
           </button>
@@ -86,7 +86,7 @@ export function CelebrateActions({
                 key={c}
                 type="button"
                 onClick={() => greet(c)}
-                className="tap-target flex-1 rounded-lg bg-[#0F766E] text-[11px] font-semibold text-white"
+                className="tap-target flex-1 rounded-lg bg-[#0D9488] text-[11px] font-semibold text-white"
               >
                 {c === "In person" ? "In-person" : c}
               </button>
@@ -95,7 +95,7 @@ export function CelebrateActions({
         )}
       </div>
       {error && <p className="mt-1 text-[12px] font-medium text-[#DC2626]">⚠ {error}</p>}
-      <p className="mt-1 text-[11px] text-[#667370]">
+      <p className="mt-1 text-[11px] text-[#6B7280]">
         Personalize first, then send it yourself — nothing sends automatically.
       </p>
     </div>

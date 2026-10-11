@@ -20,11 +20,19 @@ interface Member {
   name: string;
 }
 
+// Service rhythm: Sundays are the anchor day. "This Sunday" = upcoming Sunday
+// (today if already Sunday); "Next Sunday" = the one after.
 function dueISO(label: string): string {
   const d = new Date();
   if (label === "Tomorrow") d.setDate(d.getDate() + 1);
   else if (label === "+3 days") d.setDate(d.getDate() + 3);
+  else if (label === "This Sunday") d.setDate(d.getDate() + ((7 - d.getDay()) % 7));
+  else if (label === "Next Sunday") d.setDate(d.getDate() + ((7 - d.getDay()) % 7) + 7);
   return d.toISOString().slice(0, 10);
+}
+
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 export default function ActionDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -33,6 +41,7 @@ export default function ActionDetail({ params }: { params: Promise<{ id: string 
   const [members, setMembers] = useState<Member[] | null>(null);
   const [assignee, setAssignee] = useState("");
   const [note, setNote] = useState("");
+  const [customDue, setCustomDue] = useState("");
   const [action, setAction] = useState<FollowAction | undefined>();
 
   async function refresh() {
@@ -83,12 +92,12 @@ export default function ActionDetail({ params }: { params: Promise<{ id: string 
             <Avatar name={remote.personName} size="lg" />
             <div className="min-w-0 flex-1">
               <p className="font-display text-[18px] font-semibold">{remote.title}</p>
-              <p className="truncate text-[14px] text-[#667370]">
+              <p className="truncate text-[14px] text-[#6B7280]">
                 {remote.personName} · {remote.personPhone}
               </p>
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <StatusPill text={remote.status} />
-                <span className="font-mono2 text-[12px] text-[#667370]">due {remote.dueLabel}</span>
+                <span className="font-mono2 text-[12px] text-[#6B7280]">due {remote.dueLabel}</span>
               </div>
             </div>
           </div>
@@ -109,7 +118,7 @@ export default function ActionDetail({ params }: { params: Promise<{ id: string 
           </div>
         ) : (
           <Card>
-            <p className="text-[14px] text-[#667370]">Completed ✓ — see the journey for what comes next.</p>
+            <p className="text-[14px] text-[#6B7280]">Completed ✓ — see the journey for what comes next.</p>
           </Card>
         )}
 
@@ -119,16 +128,34 @@ export default function ActionDetail({ params }: { params: Promise<{ id: string 
               <p className="font-display text-[15px] font-semibold">Reschedule</p>
             </div>
             <div className="mt-2 grid grid-cols-3 gap-2">
-              {["Today", "Tomorrow", "+3 days"].map((label) => (
+              {["Today", "Tomorrow", "+3 days", "This Sunday", "Next Sunday"].map((label) => (
                 <button
                   key={label}
                   type="button"
                   onClick={() => mutate(`/api/actions/${id}`, { dueAt: dueISO(label) }, `Moved to ${label} ✓`)}
-                  className="tap-target rounded-lg border border-[#E2E8E6] bg-white text-[13px] font-medium"
+                  className="tap-target rounded-lg border border-[#E5E7EB] bg-white text-[13px] font-medium"
                 >
                   {label}
                 </button>
               ))}
+            </div>
+            <div className="mt-2 flex gap-2">
+              <input
+                type="date"
+                value={customDue}
+                min={todayISO()}
+                onChange={(e) => setCustomDue(e.target.value)}
+                aria-label="Pick a date"
+                className="tap-target min-w-0 flex-1 rounded-lg border border-[#E5E7EB] bg-white px-3 text-[14px] outline-none focus:border-[#0D9488]"
+              />
+              <button
+                type="button"
+                disabled={!customDue}
+                onClick={() => mutate(`/api/actions/${id}`, { dueAt: customDue }, "Moved ✓")}
+                className="tap-target shrink-0 rounded-lg bg-[#0D9488] px-4 text-[14px] font-semibold text-white disabled:opacity-40"
+              >
+                Set date
+              </button>
             </div>
             {members && members.length > 0 && (
               <>
@@ -166,7 +193,7 @@ export default function ActionDetail({ params }: { params: Promise<{ id: string 
         )}
         <div className="mt-3 flex flex-col gap-2">
           <SecondaryButton href="/actions">Back to follow-ups</SecondaryButton>
-          <Link href={`/people/${remote.personId}`} className="text-center text-[13px] text-[#667370]">
+          <Link href={`/people/${remote.personId}`} className="text-center text-[13px] text-[#6B7280]">
             Open person profile →
           </Link>
         </div>
@@ -198,12 +225,12 @@ export default function ActionDetail({ params }: { params: Promise<{ id: string 
           <Avatar name={person ? `${person.firstName} ${person.lastName}` : "?"} />
           <div>
             <p className="font-display text-[18px] font-semibold">{action.title}</p>
-            <p className="text-[14px] text-[#667370]">
+            <p className="text-[14px] text-[#6B7280]">
               {person ? `${person.firstName} ${person.lastName}` : ""} · Due {action.due} · {action.status}
             </p>
           </div>
         </div>
-        <p className="mt-2 text-[13px] text-[#667370]">
+        <p className="mt-2 text-[13px] text-[#6B7280]">
           Demo data — sign in for live actions with reschedule and handover.
         </p>
       </Card>

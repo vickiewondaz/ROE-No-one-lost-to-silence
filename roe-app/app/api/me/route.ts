@@ -23,6 +23,8 @@ export async function GET() {
       userId: ctx.userId,
       orgId: ctx.orgId,
       orgName: org[0]?.name ?? "Your organisation",
+      orgLogo: org[0]?.logoUrl ?? null,
+      orgWhatsapp: org[0]?.whatsapp ?? null,
       role: ctx.role,
     },
   });

@@ -4,6 +4,7 @@ import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shell, Card, Field, PrimaryButton, inputCls } from "@/components/ui";
 import { loadActions, saveActions, loadPeople, savePeople } from "@/lib/data";
+import { markOfflineSaved } from "@/lib/offline";
 
 export default function Record({
   params,
@@ -13,19 +14,43 @@ export default function Record({
   const { id } = use(params);
   const router = useRouter();
   const [channel, setChannel] = useState("WhatsApp");
-  const [outcome, setOutcome] = useState("Reached — warm conversation");
+  // No default outcome: a pre-picked "warm conversation" would bias every
+  // rushed record positive. The worker chooses explicitly, every time.
+  const [outcome, setOutcome] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
   const [livePerson, setLivePerson] = useState<string | null>(null);
+  const [knownInterests, setKnownInterests] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/actions/${id}`, { credentials: "same-origin" })
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
-        if (j?.data?.personId) setLivePerson(j.data.personId as string);
+        const pid = j?.data?.personId as string | undefined;
+        if (pid) {
+          setLivePerson(pid);
+          fetch(`/api/people/${pid}`, { credentials: "same-origin" })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((p) => {
+              const iv = (p?.data?.interests as string | undefined)?.trim();
+              if (iv) setKnownInterests(iv);
+            })
+            .catch(() => {});
+        }
       })
       .catch(() => {});
   }, [id]);
+
+  const TEMPLATES = [
+    "Called, no answer — retry Sunday",
+    "Warm chat — invited to Sunday service",
+    "Asked to call back in the evening",
+    "Prayed together",
+  ];
+
+  function addTemplate(t: string) {
+    setNotes((cur) => (cur.trim() ? `${cur.trim()} · ${t}` : t));
+  }
 
   function localSave() {
     const actions = loadActions().map((a) =>
@@ -49,7 +74,12 @@ export default function Record({
 
   async function save() {
     setError("");
+    if (!outcome) {
+      setError("Choose what happened — honest answers only, negative counts too.");
+      return;
+    }
     if (livePerson) {
+      let networkFailed = false;
       try {
         const r = await fetch("/api/interactions", {
           method: "POST",
@@ -68,7 +98,12 @@ export default function Record({
           setError(j.error);
           return;
         }
-      } catch {}
+      } catch {
+        networkFailed = true;
+      }
+      // Live record existed but the network failed: flag it loud so the
+      // recorded page warns "device only, not sent".
+      if (networkFailed) markOfflineSaved();
     }
     localSave();
   }
@@ -90,7 +125,13 @@ export default function Record({
           </select>
         </Field>
         <Field label="Outcome (honest — negative allowed)" error={error}>
-          <select className={inputCls} value={outcome} onChange={(e) => setOutcome(e.target.value)}>
+          <select
+            className={inputCls}
+            value={outcome}
+            onChange={(e) => setOutcome(e.target.value)}
+            aria-label="Interaction outcome"
+          >
+            <option value="">Choose what happened…</option>
             <option>Reached — warm conversation</option>
             <option>Reached — asked to call back</option>
             <option>No answer</option>
@@ -98,16 +139,31 @@ export default function Record({
             <option>Wrong number</option>
           </select>
         </Field>
-        <Field label="Notes" hint="What did they express interest in?">
+        <Field
+          label="Notes"
+          hint={knownInterests ? `On file: interested in ${knownInterests} — add only what's new.` : "What came up? Interests, needs, best time to reach them."}
+        >
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {TEMPLATES.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => addTemplate(t)}
+                className="rounded-full border border-[#E5E7EB] bg-white px-2.5 py-1.5 text-[12px] font-medium text-[#0D9488] active:bg-[#CCFBF1]"
+              >
+                + {t}
+              </button>
+            ))}
+          </div>
           <textarea
             className={`${inputCls} min-h-[90px] py-2`}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="e.g. Interested in Young Adults, prefers evenings"
+            placeholder={knownInterests ? `e.g. Still loves ${knownInterests} — prefers evenings` : "e.g. Interested in Young Adults, prefers evenings"}
           />
         </Field>
         <Card>
-          <p className="text-[13px] text-[#667370]">
+          <p className="text-[13px] text-[#6B7280]">
             Saving records the interaction. It does not claim a relationship was built.
           </p>
         </Card>

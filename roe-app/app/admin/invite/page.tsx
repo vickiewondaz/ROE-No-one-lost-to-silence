@@ -44,7 +44,7 @@ export default function AdminInvite() {
             className={inputCls}
             type="email"
             required
-            placeholder="worker@church.org"
+            placeholder="worker@example.org"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -69,15 +69,23 @@ export default function AdminInvite() {
               <button
                 type="button"
                 onClick={() => navigator.clipboard?.writeText(link)}
-                className="tap-target flex-1 rounded-lg border border-[#E2E8E6] text-[14px] font-medium"
+                className="tap-target flex-1 rounded-lg border border-[#E5E7EB] text-[14px] font-medium"
               >
                 Copy link
               </button>
               <a
-                href={`https://wa.me/?text=${encodeURIComponent(`You're invited to join our follow-up team: ${link}`)}`}
+                href={`https://wa.me/?text=${encodeURIComponent(
+                  role === "member"
+                    ? `You're invited to join us: ${link}`
+                    : role === "group_leader"
+                      ? `You're invited to lead a group with us: ${link}`
+                      : role === "care"
+                        ? `You're invited to join our care team: ${link}`
+                        : `You're invited to join our follow-up team: ${link}`
+                )}`}
                 target="_blank"
                 rel="noreferrer"
-                className="tap-target flex-1 rounded-lg bg-[#0F766E] py-2 text-center text-[14px] font-semibold text-white"
+                className="tap-target flex-1 rounded-lg bg-[#0D9488] py-2 text-center text-[14px] font-semibold text-white"
               >
                 Share via WhatsApp
               </a>

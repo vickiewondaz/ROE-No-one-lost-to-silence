@@ -3,23 +3,24 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Shell, Card, AttentionPill, Avatar, SectionHead } from "@/components/ui";
+import { Shell, Card, AttentionPill, Avatar, SectionHead, ContactButtons } from "@/components/ui";
 import { loadActions, loadPeople, type FollowAction } from "@/lib/data";
 
 interface RemoteAction {
   id: string;
   personId: string;
   personName: string;
+  personPhone: string;
   title: string;
   status: string;
   dueLabel: string;
   bucket: string;
 }
 
-function Row({ a }: { a: { id: string; personName: string; title: string; dueLabel: string; overdue?: boolean; status: string } }) {
+function Row({ a }: { a: { id: string; personName: string; personPhone?: string; title: string; dueLabel: string; overdue?: boolean; status: string } }) {
   return (
-    <Link href={`/actions/${a.id}`}>
-      <Card>
+    <Card>
+      <Link href={`/actions/${a.id}`}>
         <div className="flex items-center gap-3">
           <Avatar name={a.personName} />
           <div className="min-w-0 flex-1">
@@ -28,16 +29,17 @@ function Row({ a }: { a: { id: string; personName: string; title: string; dueLab
               {a.overdue ? (
                 <AttentionPill text={a.dueLabel} />
               ) : (
-                <span className="font-mono2 shrink-0 text-[12px] text-[#667370]">{a.dueLabel}</span>
+                <span className="font-mono2 shrink-0 text-[12px] text-[#6B7280]">{a.dueLabel}</span>
               )}
             </div>
-            <p className="truncate text-[13px] text-[#667370]">
+            <p className="truncate text-[13px] text-[#6B7280]">
               {a.title} · next: record interaction
             </p>
           </div>
         </div>
-      </Card>
-    </Link>
+      </Link>
+      {a.personPhone && <ContactButtons phone={a.personPhone} />}
+    </Card>
   );
 }
 
@@ -74,7 +76,7 @@ export default function ActionsPage() {
             <Row key={a.id} a={{ ...a, overdue: true }} />
           ))}
           {overdue.length === 0 && (
-            <p className="text-[13px] text-[#667370]">Nothing overdue. 🎉</p>
+            <p className="text-[13px] text-[#6B7280]">Nothing overdue. 🎉</p>
           )}
         </div>
         <div className="mt-4">
@@ -84,7 +86,7 @@ export default function ActionsPage() {
           {today.map((a) => (
             <Row key={a.id} a={a} />
           ))}
-          {today.length === 0 && <p className="text-[13px] text-[#667370]">Today is clear.</p>}
+          {today.length === 0 && <p className="text-[13px] text-[#6B7280]">Today is clear.</p>}
         </div>
         <div className="mt-4">
           <SectionHead title="Upcoming" count={upcoming.length} />
@@ -96,7 +98,7 @@ export default function ActionsPage() {
         </div>
         {done.length > 0 && (
           <details className="mt-4">
-            <summary className="cursor-pointer text-[14px] font-medium text-[#0F766E]">
+            <summary className="cursor-pointer text-[14px] font-medium text-[#0D9488]">
               Completed ({done.length})
             </summary>
             <div className="mt-2 flex flex-col gap-2">
@@ -146,8 +148,8 @@ function Empty() {
   return (
     <Card>
       <p className="font-medium">Nothing due.</p>
-      <p className="text-[13px] text-[#667370]">
-        You're all caught up. <Link href="/people" className="text-[#0F766E]">View people</Link>
+      <p className="text-[13px] text-[#6B7280]">
+        You're all caught up. <Link href="/people" className="text-[#0D9488]">View people</Link>
       </p>
     </Card>
   );

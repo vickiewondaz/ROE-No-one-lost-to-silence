@@ -279,8 +279,8 @@ import { execFileSync } from "node:child_process";
 }
 let newOrgId = "";
 {
-  const slug = `smoke-church-${Date.now()}`;
-  const r = await req("POST", "/api/platform/orgs", { name: "Smoke Church", slug });
+  const slug = `smoke-community-${Date.now()}`;
+  const r = await req("POST", "/api/platform/orgs", { name: "Smoke Community", slug });
   check("org create → 201", r.status === 201 && !!r.j?.data?.id, `got=${r.status}`);
   newOrgId = r.j?.data?.id ?? "";
 }
@@ -414,12 +414,16 @@ let worker2Id = "";
 }
 const joinEmail = `joiner-${Date.now()}@t.co`;
 {
-  const bad = await req("POST", "/api/join", { orgSlug: "nope", name: "Nobody Here", email: joinEmail }, false);
-  check("unknown church → 404", bad.status === 404, `got=${bad.status}`);
-  const r = await req("POST", "/api/join", { orgSlug: "grace-pilot", name: "Joiner", email: joinEmail, message: "visited Sunday" }, false);
+  const bad = await req("POST", "/api/join", { orgSlug: "nope", name: "Nobody Here", email: joinEmail, phone: "+2348000000001" }, false);
+  check("unknown community → 404", bad.status === 404, `got=${bad.status}`);
+  const r = await req("POST", "/api/join", { orgSlug: "grace-pilot", name: "Joiner", email: joinEmail, phone: "+2348000000002", message: "visited Sunday" }, false);
   check("join request → 201", r.status === 201, `got=${r.status}`);
-  const dup = await req("POST", "/api/join", { orgSlug: "grace-pilot", name: "Joiner", email: joinEmail }, false);
+  const dup = await req("POST", "/api/join", { orgSlug: "grace-pilot", name: "Joiner", email: joinEmail, phone: "+2348000000002" }, false);
   check("duplicate request → idempotent 200", dup.status === 200, `got=${dup.status}`);
+  const phoneOnly = await req("POST", "/api/join", { orgSlug: "grace-pilot", name: "Phone Only", phone: `+23480000${String(Date.now()).slice(-4)}` }, false);
+  check("phone-only request (no email) → 201", phoneOnly.status === 201, `got=${phoneOnly.status}`);
+  const noContact = await req("POST", "/api/join", { orgSlug: "grace-pilot", name: "No Contact" }, false);
+  check("no phone → 422", noContact.status === 422, `got=${noContact.status}`);
 }
 let joinReqId = "", joinToken = "";
 {
@@ -444,7 +448,7 @@ let joinReqId = "", joinToken = "";
   cookie = ADMIN_COOKIE;
 }
 {
-  const r = await req("POST", "/api/join", { orgSlug: "grace-pilot", name: "Declined", email: `decline-${Date.now()}@t.co` }, false);
+  const r = await req("POST", "/api/join", { orgSlug: "grace-pilot", name: "Declined", email: `decline-${Date.now()}@t.co`, phone: "+2348000000003" }, false);
   check("second request → 201", r.status === 201, `got=${r.status}`);
   const l = await req("GET", "/api/join");
   const target = (l.j?.data ?? []).find((j) => j.status === "pending" && j.email.startsWith("decline-"));
@@ -482,6 +486,46 @@ let joinReqId = "", joinToken = "";
   check("acknowledge → 201", ack.status === 201, `got=${ack.status}`);
   const tl = await req("GET", `/api/people/${newId}/timeline`);
   check("greeting in timeline", tl.status === 200 && (tl.j?.data ?? []).some((e) => e.title.includes("Celebration acknowledged")), `got=${tl.status}`);
+}
+// ---- Self-service PATCH + organisation profile + service days ----
+{
+  const bad = await req("PATCH", `/api/people/${newId}`, { phone: "12" });
+  check("people patch bad phone → 422", bad.status === 422, `got=${bad.status}`);
+  const p = await req("PATCH", `/api/people/${newId}`, { lastName: "Proven", interests: "Welcome team" });
+  check("people patch names+interests → 200", p.status === 200 && p.j?.data?.lastName === "Proven", `got=${p.status}`);
+  const back = await req("PATCH", `/api/people/${newId}`, { lastName: "Test", interests: "" });
+  check("people patch restore → 200", back.status === 200 && back.j?.data?.lastName === "Test", `got=${back.status}`);
+  const ghost = await req("PATCH", "/api/people/00000000-0000-0000-0000-000000000000", { phone: "+2348010000001" });
+  check("people patch unknown → 404", ghost.status === 404, `got=${ghost.status}`);
+  const anon = await req("PATCH", `/api/people/${newId}`, { phone: "+2348010000001" }, false);
+  check("people patch anon → 401", anon.status === 401, `got=${anon.status}`);
+}
+{
+  const g = await req("GET", "/api/org");
+  check("org get → 200", g.status === 200 && !!g.j?.data?.slug, `got=${g.status}`);
+  const bad = await req("PATCH", "/api/org", { logoUrl: "not-a-url" });
+  check("org bad logo → 422", bad.status === 422, `got=${bad.status}`);
+  const s = await req("PATCH", "/api/org", { whatsapp: "+2348010000009", welcomeMessage: "Smoke test welcome" });
+  check("org patch → 200", s.status === 200 && s.j?.data?.whatsapp === "+2348010000009", `got=${s.status}`);
+  const rst = await req("PATCH", "/api/org", { logoUrl: "", whatsapp: "", welcomeMessage: "" });
+  check("org restore → 200 nulls", rst.status === 200 && rst.j?.data?.whatsapp === null, `got=${rst.status}`);
+  const anon = await req("GET", "/api/org", null, false);
+  check("org anon → 401", anon.status === 401, `got=${anon.status}`);
+}
+{
+  const bad = await req("POST", "/api/services", { name: "X", kind: "weekly" });
+  check("service missing weekday → 422", bad.status === 422, `got=${bad.status}`);
+  const c = await req("POST", "/api/services", { name: "Smoke Service", kind: "weekly", weekday: 0, time: "9:00 AM" });
+  check("service create → 201", c.status === 201 && !!c.j?.data?.id, `got=${c.status}`);
+  const sid = c.j?.data?.id ?? "";
+  const l = await req("GET", "/api/services");
+  check("service list → 1+", l.status === 200 && (l.j?.data ?? []).length >= 1, `got=${l.status}`);
+  const e = await req("PATCH", `/api/services/${sid}`, { name: "Smoke Service", kind: "special", date: "2099-12-25", time: "10:00 AM" });
+  check("service edit → 200 special", e.status === 200 && e.j?.data?.kind === "special", `got=${e.status}`);
+  const d = await req("DELETE", `/api/services/${sid}`);
+  check("service delete → 200", d.status === 200, `got=${d.status}`);
+  const anon = await req("GET", "/api/services", null, false);
+  check("services anon → 401", anon.status === 401, `got=${anon.status}`);
 }
 console.log(`smoke: pass=${pass} fail=${fail} admin=${adminId ? "created" : "MISSING"}`);
 process.exit(fail ? 1 : 0);

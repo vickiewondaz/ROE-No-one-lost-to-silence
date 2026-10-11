@@ -13,7 +13,7 @@ export async function GET() {
   const s = await requireSession();
   if ("error" in s) return NextResponse.json({ error: s.message }, { status: s.error });
   const { ctx } = s;
-  if (ctx.role !== "admin")
+  if (!["admin", "senior"].includes(ctx.role))
     return NextResponse.json({ error: "Not permitted." }, { status: 403 });
   const db = getDb();
   const rows = await db.transaction(async (tx) => {
@@ -29,7 +29,7 @@ export async function GET() {
   for (const r of rows) {
     if (r.actor && !actors.has(r.actor)) {
       const u = await db.select().from(users).where(eq(users.id, r.actor)).limit(1);
-      actors.set(r.actor, u[0]?.email ?? "unknown");
+      actors.set(r.actor, u[0]?.name?.trim() || u[0]?.email || "unknown");
     }
   }
   return NextResponse.json({

@@ -1,17 +1,12 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const jakarta = Plus_Jakarta_Sans({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-});
-
+// Figma v1: Inter throughout — display included (500/600/700 for headings).
 const inter = Inter({
   variable: "--font-body",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -25,8 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${jakarta.variable} ${inter.variable} h-full`}>
-      <body className="min-h-full bg-[#F8FAF9] font-body text-[#17201F] antialiased">
+      <html lang="en" className={`${inter.variable} h-full`}>
+      <body className="min-h-full bg-[#F8FAF9] font-body text-[#111827] antialiased">
         {children}
       </body>
     </html>

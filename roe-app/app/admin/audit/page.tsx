@@ -41,7 +41,7 @@ export default function AuditPage() {
 
   return (
     <Shell title="Audit log" back="/admin/users" tab="more">
-      <p className="text-[13px] text-[#667370]">
+      <p className="text-[13px] text-[#6B7280]">
         Newest first. Denied attempts are the interesting rows — they prove the walls hold.
       </p>
       <div className="mt-2 flex flex-col gap-1.5">
@@ -57,14 +57,14 @@ export default function AuditPage() {
                 {r.allowed ? "allowed" : "denied"}
               </span>
             </div>
-            <p className="mt-0.5 font-mono2 text-[12px] text-[#667370]">
+            <p className="mt-0.5 font-mono2 text-[12px] text-[#6B7280]">
               {r.actor} · {new Date(r.at).toLocaleString()}
             </p>
           </Card>
         ))}
         {rows.length === 0 && (
           <Card>
-            <p className="text-[14px] text-[#667370]">No events yet.</p>
+            <p className="text-[14px] text-[#6B7280]">No events yet.</p>
           </Card>
         )}
       </div>

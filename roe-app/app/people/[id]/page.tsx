@@ -4,7 +4,8 @@
 // (P1 care) — a locked placeholder marks the boundary, never the content.
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { Shell, Card, StatusPill, Avatar, JourneyStepper, SectionHead, inputCls } from "@/components/ui";
+import { Shell, Card, StatusPill, Avatar, JourneyStepper, SectionHead, inputCls, memberJourneyLabel } from "@/components/ui";
+import OfflineBanner from "@/components/offline-banner";
 import { CelebrateActions } from "@/components/celebrate";
 import { loadPeople, type Person } from "@/lib/data";
 
@@ -58,6 +59,7 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
   const [mMonth, setMMonth] = useState("1");
   const [mDay, setMDay] = useState("");
   const [mError, setMError] = useState("");
+  const [isMember, setIsMember] = useState(false);
 
   useEffect(() => {
     fetch(`/api/people/${id}`)
@@ -102,6 +104,12 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
         if (Array.isArray(j?.data)) setMilestones(j.data as Milestone[]);
       })
       .catch(() => {});
+    fetch("/api/me", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (j?.data?.role === "member") setIsMember(true);
+      })
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -110,7 +118,7 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
       <Shell title="Person" back="/people" tab="people">
         <Card>
           <p className="font-medium">Restricted or not found.</p>
-          <p className="text-[13px] text-[#667370]">
+          <p className="text-[13px] text-[#6B7280]">
             You don't have permission, or the record was removed.
           </p>
         </Card>
@@ -120,7 +128,7 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
     return (
       <Shell title="Person" back="/people" tab="people">
         <Card>
-          <p className="text-[14px] text-[#667370]">Loading…</p>
+          <p className="text-[14px] text-[#6B7280]">Loading…</p>
         </Card>
       </Shell>
     );
@@ -134,6 +142,7 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
 
   return (
     <Shell title={`${person.firstName} ${person.lastName}`} back="/people" tab="people">
+      <OfflineBanner />
       <Card>
         <div className="flex items-center gap-3">
           <Avatar name={`${person.firstName} ${person.lastName}`} size="lg" />
@@ -141,41 +150,43 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
             <p className="font-display truncate text-[20px] font-semibold">
               {person.firstName} {person.lastName}
             </p>
-            <p className="font-mono2 text-[12px] text-[#667370]">{person.phone}</p>
+            <p className="font-mono2 text-[12px] text-[#6B7280]">{person.phone}</p>
             <div className="mt-1">
-              <StatusPill text={person.journey} />
+              <StatusPill text={isMember ? memberJourneyLabel(person.journey) : person.journey} />
             </div>
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          <a
-            href={`tel:${person.phone}`}
-            className="tap-target rounded-lg border border-[#E2E8E6] py-2 text-center text-[14px] font-medium"
-          >
-            Call
-          </a>
-          <a
-            href={`https://wa.me/${person.phone.replace(/\D/g, "")}`}
-            target="_blank"
-            rel="noreferrer"
-            className="tap-target rounded-lg border border-[#E2E8E6] py-2 text-center text-[14px] font-medium"
-          >
-            WhatsApp
-          </a>
-          <Link
-            href={`/people/${person.id}/next`}
-            className="tap-target rounded-lg bg-[#0F766E] py-2 text-center text-[14px] font-semibold text-white"
-          >
-            Next Action
-          </Link>
-        </div>
+        {!isMember && (
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <a
+              href={`tel:${person.phone}`}
+              className="tap-target rounded-lg border border-[#E5E7EB] py-2 text-center text-[14px] font-medium"
+            >
+              Call
+            </a>
+            <a
+              href={`https://wa.me/${person.phone.replace(/\D/g, "")}`}
+              target="_blank"
+              rel="noreferrer"
+              className="tap-target rounded-lg border border-[#E5E7EB] py-2 text-center text-[14px] font-medium"
+            >
+              WhatsApp
+            </a>
+            <Link
+              href={`/people/${person.id}/next`}
+              className="tap-target rounded-lg bg-[#0D9488] py-2 text-center text-[14px] font-semibold text-white"
+            >
+              Next Action
+            </Link>
+          </div>
+        )}
       </Card>
 
       <div className="mt-4">
-        <SectionHead title="Journey" />
+        <SectionHead title={isMember ? "My journey" : "Journey"} />
       </div>
       <Card>
-        <JourneyStepper current={person.journey} />
+        <JourneyStepper current={person.journey} tone={isMember ? "member" : undefined} />
       </Card>
 
       <div className="mt-4">
@@ -184,53 +195,71 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
       <Card>
         <dl className="flex flex-col gap-1.5 text-[14px]">
           <div className="flex justify-between gap-3">
-            <dt className="text-[#667370]">Contact</dt>
+            <dt className="text-[#6B7280]">Contact</dt>
             <dd className="text-right font-medium">
               {person.channel} · {person.phone}
             </dd>
           </div>
           <div className="flex justify-between gap-3">
-            <dt className="text-[#667370]">Interests</dt>
+            <dt className="text-[#6B7280]">Interests</dt>
             <dd className="text-right font-medium">{person.interests || "—"}</dd>
           </div>
           <div className="flex justify-between gap-3">
-            <dt className="text-[#667370]">Group</dt>
+            <dt className="text-[#6B7280]">Group</dt>
             <dd className="text-right font-medium">{person.group ?? "Not connected yet"}</dd>
           </div>
           <div className="flex justify-between gap-3">
-            <dt className="text-[#667370]">Follow-up owner</dt>
+            <dt className="text-[#6B7280]">Follow-up owner</dt>
             <dd className="text-right font-medium">{person.assignee}</dd>
           </div>
         </dl>
       </Card>
 
-      <div className="mt-4">
-        <SectionHead title="Next step" />
-      </div>
-      <div className="rounded-xl border border-[#D97706]/40 bg-[#FFFBEB] p-4">
-        <p className="font-display font-semibold">{person.nextAction}</p>
-        <div className="mt-2 flex gap-2">
-          <Link
-            href={`/people/${person.id}/next`}
-            className="tap-target flex-1 rounded-lg bg-[#0F766E] py-2 text-center text-[14px] font-semibold text-white"
-          >
-            Plan it
-          </Link>
-          <Link
-            href={`/people/${person.id}/suggest`}
-            className="tap-target flex-1 rounded-lg border border-[#E2E8E6] bg-white py-2 text-center text-[14px] font-medium"
-          >
-            Connect
-          </Link>
-        </div>
-      </div>
+      {!isMember ? (
+        <>
+          <div className="mt-4">
+            <SectionHead title="Next step" />
+          </div>
+          <div className="rounded-xl border border-[#D97706]/40 bg-[#FFFBEB] p-4">
+            <p className="font-display font-semibold">{person.nextAction}</p>
+            <div className="mt-2 flex gap-2">
+              <Link
+                href={`/people/${person.id}/next`}
+                className="tap-target flex-1 rounded-lg bg-[#0D9488] py-2 text-center text-[14px] font-semibold text-white"
+              >
+                Plan it
+              </Link>
+              <Link
+                href={`/people/${person.id}/suggest`}
+                className="tap-target flex-1 rounded-lg border border-[#E5E7EB] bg-white py-2 text-center text-[14px] font-medium"
+              >
+                Connect
+              </Link>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="mt-4">
+            <SectionHead title="What's next for me" />
+          </div>
+          <div className="rounded-xl border border-[#D97706]/40 bg-[#FFFBEB] p-4">
+            <p className="text-[14px]">{person.nextAction}</p>
+            {person.assignee && person.assignee !== "Unassigned" && (
+              <p className="mt-1 text-[13px] text-[#6B7280]">
+                Your contact {person.assignee} will be in touch — no need to do anything.
+              </p>
+            )}
+          </div>
+        </>
+      )}
 
       <div className="mt-4">
         <SectionHead title="History" count={feed?.length} />
       </div>
       {feed === null ? (
         <Card>
-          <div className="flex flex-col gap-1.5 text-[14px] text-[#667370]">
+          <div className="flex flex-col gap-1.5 text-[14px] text-[#6B7280]">
             <p>Today · Welcome follow-up completed</p>
             <p>Yesterday · Introduced to Young Adults</p>
             <p className="text-[12px]">(Sign in for the live timeline.)</p>
@@ -238,7 +267,7 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
         </Card>
       ) : feed.length === 0 ? (
         <Card>
-          <p className="text-[14px] text-[#667370]">
+          <p className="text-[14px] text-[#6B7280]">
             No history yet — the first recorded interaction starts this thread.
           </p>
         </Card>
@@ -246,20 +275,20 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
         <div className="flex flex-col gap-3">
           {[...grouped.entries()].map(([day, items]) => (
             <div key={day}>
-              <p className="font-mono2 mb-1 text-[12px] uppercase tracking-wide text-[#667370]">
+              <p className="font-mono2 mb-1 text-[12px] uppercase tracking-wide text-[#6B7280]">
                 {day}
               </p>
               <Card>
                 <div className="flex flex-col gap-2">
                   {items.map((e, i) => (
                     <div key={i} className="flex gap-2.5">
-                      <span aria-hidden className="text-[#0F766E]">
+                      <span aria-hidden className="text-[#0D9488]">
                         {KIND_ICON[e.kind] ?? "•"}
                       </span>
                       <div className="min-w-0">
                         <p className="text-[14px] font-medium">{e.title}</p>
                         {e.detail && (
-                          <p className="text-[13px] text-[#667370]">{e.detail}</p>
+                          <p className="text-[13px] text-[#6B7280]">{e.detail}</p>
                         )}
                       </div>
                     </div>
@@ -271,9 +300,9 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
         </div>
       )}
 
-      <div className="mt-4 rounded-xl border border-dashed border-[#E2E8E6] p-4">
+      <div className="mt-4 rounded-xl border border-dashed border-[#E5E7EB] p-4">
         <p className="text-[14px] font-medium">🔒 Pastoral notes — restricted</p>
-        <p className="text-[13px] text-[#667370]">
+        <p className="text-[13px] text-[#6B7280]">
           Sensitive care content lives in a separate restricted workflow (coming
           in a later release) — never in this timeline, never visible here.
         </p>
@@ -284,9 +313,9 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
       </div>
       <Card>
         {milestones === null ? (
-          <p className="text-[13px] text-[#667370]">Sign in to see recorded dates.</p>
+          <p className="text-[13px] text-[#6B7280]">Sign in to see recorded dates.</p>
         ) : milestones.length === 0 ? (
-          <p className="text-[13px] text-[#667370]">
+          <p className="text-[13px] text-[#6B7280]">
             None recorded — birthdays and anniversaries appear here so nobody's day passes unnoticed.
           </p>
         ) : (
@@ -342,7 +371,7 @@ function AddMilestone(props: {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="tap-target mt-2 w-full rounded-lg border border-[#E2E8E6] text-[14px] font-medium text-[#0F766E]"
+        className="tap-target mt-2 w-full rounded-lg border border-[#E5E7EB] text-[14px] font-medium text-[#0D9488]"
       >
         + Add birthday or anniversary
       </button>
@@ -393,11 +422,11 @@ function AddMilestone(props: {
         />
       </div>
       {mError && <p className="text-[13px] font-medium text-[#DC2626]">⚠ {mError}</p>}
-      <p className="text-[12px] text-[#667370]">Month + day only — never ask the year.</p>
+      <p className="text-[12px] text-[#6B7280]">Month + day only — never ask the year.</p>
       <button
         type="button"
         onClick={save}
-        className="tap-target rounded-lg bg-[#0F766E] text-[14px] font-semibold text-white"
+        className="tap-target rounded-lg bg-[#0D9488] text-[14px] font-semibold text-white"
       >
         Save date
       </button>

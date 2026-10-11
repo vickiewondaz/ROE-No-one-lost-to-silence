@@ -24,12 +24,12 @@ Source of truth for recovery: this file + `scripts/neon-migrate.mjs`.
 - Backups: Neon automatic daily snapshots (free tier: 7d history). RPO 24h / RTO 4h pilot target.
 - Restore test procedure (copy-on-write, zero downtime, instant):
   `neon branches create --name restore-test` → verify tables + spot-check rows →
-  `neon branches delete restore-test`. Last test: 20 tables + full data readable.
+  `neon branches delete restore-test`. Last test: 23 tables + full data readable.
 - Real restore: `neon branches restore <target> <source>[@timestamp]` per CLI help. Practice on a scratch branch first, never on production directly.
 
 ## 6. Kill switches (in priority order)
 1. `ALLOW_SETUP=false` + redeploy — kills self-service account creation.
-2. Suspend org (`/platform`) — freezes one church, preserves data.
+2. Suspend org (`/platform`) — freezes one organisation, preserves data.
 3. Revoke agent/integration tokens at source.
 4. Vercel/Netlify: rollback to previous deployment (both keep history).
 
@@ -40,5 +40,5 @@ Direct DB owner connection (`DATABASE_URL_UNPOOLED` server-side only):
 ## 8. Incident notes
 - Never paste secrets into chat. If one lands here: rotate at source immediately (see §4).
 - RLS negatives: `node scripts/neon-migrate.mjs` runs A/B/C on every apply.
-- Full app proof: `node scripts/smoke.mjs <url> [setup-secret]` (80 checks local).
+- Full app proof: `node scripts/smoke.mjs <url> [setup-secret]` (~120 checks local, incl. self-service PATCH, org profile, services CRUD).
 - Dep posture: prod `npm audit` clean; dev-only eslint-chain highs tracked, not shipped.

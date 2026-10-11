@@ -27,7 +27,7 @@ export default function Forgot() {
       <Shell title="Check your email" back="/login">
         <Card>
           <p className="font-display text-[18px] font-semibold">✓ If the address exists, mail is on its way</p>
-          <p className="mt-1 text-[14px] text-[#667370]">
+          <p className="mt-1 text-[14px] text-[#6B7280]">
             The link lasts one hour. Nothing arrives? Check spam, or ask your
             administrator — WhatsApp is faster anyway.
           </p>
@@ -44,7 +44,7 @@ export default function Forgot() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@church.org"
+            placeholder="you@example.org"
             autoComplete="email"
           />
         </Field>

@@ -4,6 +4,7 @@ import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shell, Card, Field, PrimaryButton, inputCls } from "@/components/ui";
 import { loadPeople, savePeople, loadActions, saveActions } from "@/lib/data";
+import { markOfflineSaved } from "@/lib/offline";
 
 export default function Next({
   params,
@@ -43,10 +44,13 @@ export default function Next({
 
   async function save() {
     if (!none && myId) {
+      let networkFailed = false;
       try {
         const d = new Date();
         if (due === "Tomorrow") d.setDate(d.getDate() + 1);
         else if (due === "In 3 days") d.setDate(d.getDate() + 3);
+        else if (due === "This Sunday") d.setDate(d.getDate() + ((7 - d.getDay()) % 7));
+        else if (due === "Next Sunday") d.setDate(d.getDate() + ((7 - d.getDay()) % 7) + 7);
         else d.setDate(d.getDate() + 7);
         const r = await fetch("/api/actions", {
           method: "POST",
@@ -63,16 +67,19 @@ export default function Next({
           router.push(`/people/${id}`);
           return;
         }
-      } catch {}
+      } catch {
+        networkFailed = true;
+      }
+      if (networkFailed) markOfflineSaved();
     }
     localSave();
   }
 
   return (
-    <Shell title="Next action" back={`/people/${id}`}>
+    <Shell title="Next action" back={`/people/${id}`} tab="people">
       <div className="flex flex-col gap-4">
         <label className="flex items-center gap-2 text-[14px]">
-          <input type="checkbox" checked={none} onChange={(e) => setNone(e.target.checked)} className="h-5 w-5 accent-[#0F766E]" />
+          <input type="checkbox" checked={none} onChange={(e) => setNone(e.target.checked)} className="h-5 w-5 accent-[#0D9488]" />
           No further action needed right now
         </label>
         {!none && (
@@ -90,12 +97,14 @@ export default function Next({
                 <option>Tomorrow</option>
                 <option>In 3 days</option>
                 <option>In 7 days</option>
+                <option>This Sunday</option>
+                <option>Next Sunday</option>
               </select>
             </Field>
           </>
         )}
         <Card>
-          <p className="text-[13px] text-[#667370]">
+          <p className="text-[13px] text-[#6B7280]">
             Every important relationship shows a next step — or an explicit rest.
           </p>
         </Card>

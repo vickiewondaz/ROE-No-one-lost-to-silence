@@ -28,7 +28,7 @@ export async function PATCH(
   const s = await requireSession();
   if ("error" in s) return NextResponse.json({ error: s.message }, { status: s.error });
   const { ctx } = s;
-  if (ctx.role !== "admin")
+  if (!["admin", "senior"].includes(ctx.role))
     return NextResponse.json({ error: "Not permitted." }, { status: 403 });
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success)

@@ -1,4 +1,5 @@
-// MORE tab + prototype index (all 20 frames for review).
+// MORE tab. The prototype index (dev review aid) only renders outside
+// production — pilot users must never see scaffolding.
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -77,22 +78,15 @@ export default function More() {
       {isAdmin && (
         <Link
           href="/admin"
-          className="mb-3 block rounded-xl border border-[#0F766E]/40 bg-[#CCFBF1]/40 p-4"
+          className="mb-3 block rounded-xl border border-[#0D9488]/40 bg-[#CCFBF1]/40 p-4"
         >
-          <p className="font-display font-semibold text-[#115E59]">Administration →</p>
-          <p className="text-[13px] text-[#667370]">Team, invitations, organisation</p>
+          <p className="font-display font-semibold text-[#0F766E]">Administration →</p>
+          <p className="text-[13px] text-[#6B7280]">Team, invitations, organisation</p>
         </Link>
       )}
-      <Card>
-        <p className="font-display font-semibold">Connections · Care (P1) · Insights (P2)</p>
-        <p className="text-[13px] text-[#667370]">
-          MVP shows Connections via People flow. Care, celebrations, AI, admin
-          depth are future — tagged, not built.
-        </p>
-      </Card>
       <Link
         href="/settings/password"
-        className="mt-2 block rounded-lg border border-[#E2E8E6] bg-white px-3 py-2.5 text-[14px] font-medium text-[#0F766E]"
+        className="mt-2 block rounded-lg border border-[#E5E7EB] bg-white px-3 py-2.5 text-[14px] font-medium text-[#0D9488]"
       >
         Change password →
       </Link>
@@ -106,7 +100,7 @@ export default function More() {
             href={n.refId ? `/actions/${n.refId}` : "/actions"}
           >
             <Card>
-              <p className={`text-[14px] ${n.read ? "text-[#667370]" : "font-medium"}`}>
+              <p className={`text-[14px] ${n.read ? "text-[#6B7280]" : "font-medium"}`}>
                 {n.type === "assignment" ? "New assignment for you" : n.type}
                 {!n.read && " ●"}
               </p>
@@ -115,7 +109,7 @@ export default function More() {
         ))}
         {notes.length === 0 && (
           <Card>
-            <p className="text-[14px] text-[#667370]">Nothing yet. Assignments and updates land here.</p>
+            <p className="text-[14px] text-[#6B7280]">Nothing yet. Assignments and updates land here.</p>
           </Card>
         )}
       </div>
@@ -123,29 +117,33 @@ export default function More() {
         <button
           type="button"
           onClick={markRead}
-          className="tap-target mt-2 w-full rounded-lg border border-[#E2E8E6] bg-white text-[14px] font-medium"
+          className="tap-target mt-2 w-full rounded-lg border border-[#E5E7EB] bg-white text-[14px] font-medium"
         >
           Mark all read
         </button>
       )}
-      <h2 className="font-display mt-4 text-[16px] font-semibold">
-        Prototype index — all 20 frames
-      </h2>
-      <div className="mt-2 flex flex-col gap-1.5">
-        {FRAMES.map(([label, href]) => (
-          <Link
-            key={label}
-            href={href}
-            className="rounded-lg border border-[#E2E8E6] bg-white px-3 py-2.5 text-[14px] font-medium text-[#0F766E]"
-          >
-            {label} →
-          </Link>
-        ))}
-      </div>
-      <p className="mt-3 font-mono2 text-[12px] text-[#667370]">
-        Refs: Mobbin flows · Attio IA · Luma groups · SaaSUI home/states ·
-        SaaS Interface forms · Dribbble polish
-      </p>
+      {process.env.NODE_ENV !== "production" && (
+        <>
+          <h2 className="font-display mt-4 text-[16px] font-semibold">
+            Prototype index — all 20 frames
+          </h2>
+          <div className="mt-2 flex flex-col gap-1.5">
+            {FRAMES.map(([label, href]) => (
+              <Link
+                key={label}
+                href={href}
+                className="rounded-lg border border-[#E5E7EB] bg-white px-3 py-2.5 text-[14px] font-medium text-[#0D9488]"
+              >
+                {label} →
+              </Link>
+            ))}
+          </div>
+          <p className="mt-3 font-mono2 text-[12px] text-[#6B7280]">
+            Refs: Mobbin flows · Attio IA · Luma groups · SaaSUI home/states ·
+            SaaS Interface forms · Dribbble polish
+          </p>
+        </>
+      )}
     </Shell>
   );
 }

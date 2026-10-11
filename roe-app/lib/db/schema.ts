@@ -6,6 +6,7 @@ import {
   text,
   timestamp,
   boolean,
+  integer,
   pgEnum,
 } from "drizzle-orm/pg-core";
 
@@ -41,6 +42,10 @@ export const organisations = pgTable("organisations", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   status: text("status").notNull().default("active"),
+  // Branding for dashboards + join experience (all nullable, admin-managed).
+  logoUrl: text("logo_url"),
+  whatsapp: text("whatsapp"),
+  welcomeMessage: text("welcome_message"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -248,7 +253,7 @@ export const joinRequests = pgTable("join_requests", {
   id: uuid("id").primaryKey().defaultRandom(),
   orgId: uuid("org_id").notNull(),
   name: text("name").notNull(),
-  email: text("email").notNull(),
+  email: text("email"),
   phone: text("phone"),
   message: text("message"),
   status: text("status").notNull().default("pending"),
@@ -268,6 +273,20 @@ export const invitations = pgTable("invitations", {
   invitedBy: uuid("invited_by"),
   expiresAt: timestamp("expires_at").notNull(),
   acceptedAt: timestamp("accepted_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Service days directory (admin-managed): weekly services (Sunday service,
+// Bible study…) + one-off specials (vigil, Easter, carol night…). Shown on
+// dashboards as "what's on" — the community's own calendar, not a hardcoded list.
+export const services = pgTable("services", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orgId: uuid("org_id").notNull(),
+  name: text("name").notNull(),
+  kind: text("kind").notNull().default("weekly"),
+  weekday: integer("weekday"),
+  date: text("date"),
+  time: text("time"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

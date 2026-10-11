@@ -1,12 +1,17 @@
 @import "tailwindcss";
 
-/* ROE tokens — PRD v1.1 / UI v1.1.1 / Figma v1.2.1
-   Refs: Attio (record hierarchy), SaaSUI (home/empty states),
-   Luma (group detail), Mobbin (flows), Dribbble (card polish) */
+/* ROE tokens — Figma v1 (Oct 2026).
+   Refs: Mobbin (flows/nav), Attio (record hierarchy), Luma (groups),
+   SaaSUI (home/states), SaaS Interface (forms), Dribbble (restraint).
+   Calm semantic pairs (success/error/amber) intentionally kept from UI v1 —
+   the Figma loud hues never touch people. */
 @theme {
-  --color-teal-deep: #0f766e;
-  --color-teal-dark: #115e59;
-  --color-teal-light: #ccfbf1;
+  --color-teal-50: #f0fdfa;
+  --color-teal-100: #ccfbf1;
+  --color-teal-500: #14b8a6;
+  --color-teal-600: #0d9488;
+  --color-teal-700: #0f766e;
+  --color-teal-800: #115e59;
   --color-amber-warm: #d97706;
   --color-amber-light: #fef3c7;
   --color-orange-human: #ea580c;
@@ -15,15 +20,16 @@
   --color-blue-light: #dbeafe;
   --color-ivory: #f8faf9;
   --color-surface: #ffffff;
-  --color-ink: #17201f;
-  --color-slate2: #667370;
-  --color-border: #e2e8e6;
+  --color-ink: #111827;
+  --color-slate2: #6b7280;
+  --color-muted: #9ca3af;
+  --color-border: #e5e7eb;
   --color-success: #15803d;
   --color-success-bg: #dcfce7;
   --color-error: #dc2626;
   --color-error-bg: #fee2e2;
 
-  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono2: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }

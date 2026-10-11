@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Shell, Card, PrimaryButton, SecondaryButton } from "@/components/ui";
+import OfflineBanner from "@/components/offline-banner";
 
 export default function Created({
   params,
@@ -17,12 +18,13 @@ export default function Created({
   }, [params]);
 
   return (
-    <Shell title="Person created">
+    <Shell title="Person created" tab="people">
+      <OfflineBanner />
       <Card>
         <p className="font-display text-[18px] font-semibold">
           ✓ Record saved
         </p>
-        <p className="mt-1 text-[14px] text-[#667370]">
+        <p className="mt-1 text-[14px] text-[#6B7280]">
           Saving is not belonging. Assign a follow-up so they are not forgotten.
         </p>
         {note && (
@@ -40,9 +42,9 @@ export default function Created({
         </SecondaryButton>
         <Link
           href="/people"
-          className="text-center text-[13px] text-[#667370]"
+          className="text-center text-[13px] text-[#6B7280]"
         >
-          Back to People
+          Back to people
         </Link>
       </div>
     </Shell>

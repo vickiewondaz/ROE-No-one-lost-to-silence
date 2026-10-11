@@ -12,6 +12,8 @@ import { requireSession } from "@/lib/session";
 
 const bodySchema = z.object({
   role: z.enum(["worker", "group_leader", "member", "care"]).default("member"),
+  // Phone-first joiners may have no email; admin can supply one at approve time.
+  email: z.string().trim().email().optional(),
 });
 
 export async function POST(
@@ -24,7 +26,7 @@ export async function POST(
   const s = await requireSession();
   if ("error" in s) return NextResponse.json({ error: s.message }, { status: s.error });
   const { ctx } = s;
-  if (ctx.role !== "admin") {
+  if (!["admin", "senior"].includes(ctx.role)) {
     await getDb().insert(auditLogs).values({
       orgId: ctx.orgId, actor: ctx.userId, op: "join:approve", allowed: false,
     });
@@ -43,12 +45,14 @@ export async function POST(
     const jr = found[0];
     if (!jr) return null;
     if (jr.status !== "pending") return "settled" as const;
+    const email = (jr.email ?? parsed.data.email ?? "").toLowerCase();
+    if (!email) return "need-email" as const;
     const token = randomBytes(32).toString("hex");
     const [inv] = await tx
       .insert(invitations)
       .values({
         orgId: ctx.orgId,
-        email: jr.email,
+        email,
         role: parsed.data.role,
         tokenHash: createHash("sha256").update(token).digest("hex"),
         invitedBy: ctx.userId,
@@ -62,11 +66,16 @@ export async function POST(
     await tx.insert(auditLogs).values({
       orgId: ctx.orgId, actor: ctx.userId, op: "join:approve", ref: id, allowed: true,
     });
-    return { token, inviteId: inv.id, email: jr.email, role: parsed.data.role };
+    return { token, inviteId: inv.id, email, role: parsed.data.role };
   });
   if (out === null) return NextResponse.json({ error: "Not found." }, { status: 404 });
   if (out === "settled")
     return NextResponse.json({ error: "Already decided." }, { status: 422 });
+  if (out === "need-email")
+    return NextResponse.json(
+      { error: "This request has no email — add one to approve (e.g. ask on WhatsApp first)." },
+      { status: 422 }
+    );
   // Best-effort approval email (WhatsApp forward stays primary).
   {
     const base = new URL(req.url).origin;
@@ -77,7 +86,7 @@ export async function POST(
       .where(eq(organisations.id, ctx.orgId))
       .limit(1);
     const { subject, html } = inviteEmail(
-      org[0]?.name ?? "Your church",
+      org[0]?.name ?? "Your community",
       out.role,
       `${base}/invite/${out.token}`
     );
