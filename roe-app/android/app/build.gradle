@@ -14,8 +14,8 @@ android {
         targetSdk 35
         // v1 was the hand-signed stdlib APK (install failure under investigation).
         // This Gradle build starts at v2 so devices + Play treat it as an upgrade.
-        versionCode 3
-        versionName '1.0.2'
+        versionCode 4
+        versionName '1.0.3'
     }
 
     signingConfigs {

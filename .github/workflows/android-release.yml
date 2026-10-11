@@ -115,15 +115,20 @@ jobs:
           echo "$BADGING" | grep -q "application-debuggable" && { echo "FAIL: release is debuggable"; exit 1; } || true
           echo "$BADGING" | grep -q "targetSdkVersion:'35'" || { echo "FAIL: targetSdk"; exit 1; }
           python3 - <<'EOF'
-          import json, re, struct, sys
+          import glob, json, os, re, struct
           # asset_statements in res/values must unescape to a valid DAL statement list
           src = open('app/src/main/res/values/strings.xml', encoding='utf-8').read()
           m = re.search(r'<string name="asset_statements">(.*?)</string>', src, re.S)
           assert m, 'asset_statements missing'
           stmts = json.loads(m.group(1).replace('\\"', '"'))
           assert stmts[0]['target']['site'] == 'https://roe-pilot.netlify.app', 'DAL site mismatch'
+          # splash animated icon MUST be a plain drawable: a mipmap/adaptive
+          # reference crashes the app on launch (startup InflateException).
+          theme = open('app/src/main/res/values/themes.xml', encoding='utf-8').read()
+          m2 = re.search(r'windowSplashScreenAnimatedIcon">(.*?)<', theme)
+          assert m2 and m2.group(1).startswith('@drawable/'), 'splash icon must be @drawable/'
+          assert os.path.exists('app/src/main/res/drawable-xxxhdpi/' + m2.group(1).split('/')[-1] + '.png'), 'splash icon PNG missing'
           # every launcher PNG must be a valid square PNG
-          import glob, os
           for p in sorted(glob.glob('app/src/main/res/mipmap-*/ic_launcher*.png')):
               with open(p, 'rb') as f:
                   head = f.read(24)
@@ -156,8 +161,8 @@ jobs:
       - name: Create GitHub Release with APK + AAB
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: android-v1.0.2+${{ github.run_number }}
-          name: ROE Android v1.0.2 (build ${{ github.run_number }})
+          tag_name: android-v1.0.3+${{ github.run_number }}
+          name: ROE Android v1.0.3 (build ${{ github.run_number }})
           body: |
             Production Android release for ROE ("No one lost to silence").
 
