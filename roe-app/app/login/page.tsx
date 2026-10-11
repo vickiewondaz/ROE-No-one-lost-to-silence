@@ -55,8 +55,8 @@ export default function Login() {
         <Image
           src="/roe-logo-lockup.jpg"
           alt="ROE — No one lost to silence"
-          width={280}
-          height={155}
+          width={320}
+          height={177}
           className="mx-auto rounded-2xl bg-white object-contain"
           priority
         />
