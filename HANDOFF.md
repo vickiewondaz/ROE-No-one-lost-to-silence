@@ -54,16 +54,16 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
   photography (splash + landing backdrop + login wash), favicon.ico + apple-icon
   rebuilt from the lockup, trimmed landing (lockup + 2 buttons only), splash with
   15-min time gate. Old square logo fully purged (file deleted, zero references).
-- PWA + APK: FULLY REMOVED for a clean restart (owner request). Gone from repo:
-  manifest, SW + register/install components + wiring, PWA icons, `roe-app/android/`
-  wrapper, CI workflow. Gone from GitHub: all 3 releases + tags, all 4 signing
-  secrets. Kept: `assetlinks.json` (inert, needed when the process restarts),
-  favicon/apple-icon (plain site icons), `~/roe-android-key/` (long-lived key),
-  `roe-app/.apk-work/` (gitignored local scratch). Site is now a plain web app.
+- PWA + APK: REBUILT on owner instruction (restart). PWA layer restored
+  (manifest/SW/icons/install UI, live + validated in CI). TWA wrapper v1.0.4
+  (versionCode 5) rebuilt with the owner's `roe logo flavicon.png` as the app
+  icon (margins trimmed, mask-safe fit) + all crash lessons baked in (splash
+  @drawable, packaging gate in CI). Release `android-v1.0.4+9` (APK 3.9MB +
+  AAB 3.7MB), same package/key/fingerprint. Awaiting owner install confirm.
   History: hand-signed v1 ("package appears to be invalid") → CI TWA v1.0.1–1.0.3
   (v1.0.3 fixed a splash-@mipmap launch crash) → owner still saw a crash dialog
-  on tap → full removal. Lessons for restart: splash animated icon must be
-  @drawable; launcher icon should be roundel-only; validate packaging in CI.
+  on tap → full removal → v1.0.4 restart with flavicon icon. Standing lessons:
+  splash animated icon must be @drawable; validate packaging in CI.
 - Proof: smoke suite `scripts/smoke.mjs` (~120 checks incl. self-service PATCH, org profile, services CRUD);
   unit `npm test` (23 green); roles matrix `scripts/roles.mjs` 10/10 on seeded demo org;
   RLS negatives PASS on every migrate run. `npm run build` green, `tsc` clean.
@@ -76,13 +76,11 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
   and tested; Hugging Face token exists but account has zero credits (parked);
   free-pools-only policy, no paid spend without budget-cap code (unbuilt).
 
-## 🟢 Mobile track: removed, awaiting restart instructions
+## 🟢 Mobile track: rebuilt v1.0.4, awaiting owner install confirm
 
-- Owner asked for full removal of APK + PWA after repeated install/launch issues.
-- Everything is out (see state above). When the owner says go, restart from
-  scratch: PWA layer first (manifest/SW/icons/install UI), then TWA wrapper +
-  CI pipeline. Prior failure notes (v1 invalid-package, splash-@mipmap crash,
-  roundel-only icon) are preserved in the state section — do not repeat them.
+- Restart completed: PWA live again + TWA v1.0.4 (`android-v1.0.4+9`) with
+  flavicon icon. If the owner reports issues, get the exact symptom + device
+  details before changing anything.
 
 ## Secrets map (names only — values live in env, never in chat/files)
 
@@ -131,8 +129,8 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
 
 ## What's next (priority order)
 
-1. **Mobile restart — WAIT for owner instruction.** Do NOT rebuild PWA/APK
-   unprompted.
+1. **APK install confirm** → owner installs v1.0.4 fresh (uninstall old first)
+   from the in-app button → confirm opens to ROE home → bar-free check.
 2. Owner tasks: password self-change, token revocations, HF credits decision.
 3. Pilot: recruit pilot community #1 (church, fellowship or faith-based org), 4-week concierge, metrics vs kill bar (>70% owner<24h, >50% contact<7d), price ladder.
 4. Build queue: roles depth tail, desktop follow-through, notifications polish, TRD/plan refresh.
