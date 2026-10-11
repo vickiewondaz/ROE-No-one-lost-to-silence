@@ -11,7 +11,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "ROE — No one lost to silence",
-  description: "Capture → Assign → Follow Up → Connect → Know What Happens Next",
+  description: "No one lost to silence — follow up with every newcomer.",
 };
 
 export default function RootLayout({
