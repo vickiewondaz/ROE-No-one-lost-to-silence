@@ -54,16 +54,16 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
   photography (splash + landing backdrop + login wash), favicon.ico + apple-icon
   rebuilt from the lockup, trimmed landing (lockup + 2 buttons only), splash with
   15-min time gate. Old square logo fully purged (file deleted, zero references).
-- PWA live + proven: manifest + 3 icons + SW (shell caching, `/api/*` NEVER cached),
-  one-tap install card, offline login renders from cache, zero JS errors.
-- APK: REPLACED by CI-built TWA (`roe-app/android/`, Gradle + apksigner v1+v2,
-  versionCode 2). Old hand-signed `public/ROE.apk` (v1-only, "package appears
-  to be invalid") REMOVED from repo + download button now points at the GitHub
-  Release asset (`releases/latest/download/app-release.apk`). Release:
-  `android-v1.0.3+8` (APK + AAB). Same package/key/fingerprint,
-  upgrades cleanly. v1.0.2: roundel-only launcher icon. v1.0.3 fixed a launch
-  crash (splash animated icon must be @drawable, never @mipmap). Awaiting
-  owner install confirm.
+- PWA + APK: FULLY REMOVED for a clean restart (owner request). Gone from repo:
+  manifest, SW + register/install components + wiring, PWA icons, `roe-app/android/`
+  wrapper, CI workflow. Gone from GitHub: all 3 releases + tags, all 4 signing
+  secrets. Kept: `assetlinks.json` (inert, needed when the process restarts),
+  favicon/apple-icon (plain site icons), `~/roe-android-key/` (long-lived key),
+  `roe-app/.apk-work/` (gitignored local scratch). Site is now a plain web app.
+  History: hand-signed v1 ("package appears to be invalid") → CI TWA v1.0.1–1.0.3
+  (v1.0.3 fixed a splash-@mipmap launch crash) → owner still saw a crash dialog
+  on tap → full removal. Lessons for restart: splash animated icon must be
+  @drawable; launcher icon should be roundel-only; validate packaging in CI.
 - Proof: smoke suite `scripts/smoke.mjs` (~120 checks incl. self-service PATCH, org profile, services CRUD);
   unit `npm test` (23 green); roles matrix `scripts/roles.mjs` 10/10 on seeded demo org;
   RLS negatives PASS on every migrate run. `npm run build` green, `tsc` clean.
@@ -76,25 +76,13 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
   and tested; Hugging Face token exists but account has zero credits (parked);
   free-pools-only policy, no paid spend without budget-cap code (unbuilt).
 
-## 🔴 Open thread: APK install failure (pick up here)
+## 🟢 Mobile track: removed, awaiting restart instructions
 
-- Symptom (owner's phone): "App not installed as package appears to be invalid".
-- Ruled OUT so far: manifest is healthy (minSdk 24, target 36, versionCode 1, no
-  testOnly, correct package, parsed with corrected AXML layout — ns/name are
-  32-bit, attrs at +36); Digest-Manifest matches; manifest section digests
-  verified by script self-check; ZIP opens cleanly (454 entries, stdlib writer);
-  RSA signature byte-proven valid by independent recompute (`recomputed == in-file`).
-- Known verifier quirk (DO NOT chase again): openssl CLI `cms -verify` (both
-  LibreSSL 3.3 and cellar openssl 4) rejects the signature — LibreSSL can't even
-  verify its OWN output here, and Node `crypto.verify` ACCEPTS ours. Trust Node + math.
-- Still to check: (1) ask owner for exact Android version + confirm the download
-  completed (~1.4MB) + Play Protect wording — truncated downloads and Play Protect
-  blocks are the most common real-world causes; (2) per-section SF digest recheck
-  script crashed on an IndexError before finishing — rerun it fixed; (3) if device
-  rejects a proven-valid v1 package, add APK Signature Scheme v2 block next.
-- Re-sign flow: PWABuilder cloud package → `.apk-work/sign_apk.py IN OUT KEY DER`
-  → verify via Node `crypto.verify` on extracted sat/sig (77B/256B — NOT 79B;
-  the 79B slice was the bug that burned a whole session) → copy to `public/ROE.apk`.
+- Owner asked for full removal of APK + PWA after repeated install/launch issues.
+- Everything is out (see state above). When the owner says go, restart from
+  scratch: PWA layer first (manifest/SW/icons/install UI), then TWA wrapper +
+  CI pipeline. Prior failure notes (v1 invalid-package, splash-@mipmap crash,
+  roundel-only icon) are preserved in the state section — do not repeat them.
 
 ## Secrets map (names only — values live in env, never in chat/files)
 
@@ -143,8 +131,8 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
 
 ## What's next (priority order)
 
-1. **APK install confirm** → owner downloads from the in-app button (GitHub
-   Release asset) → confirm installs → bar-free check via assetlinks.
+1. **Mobile restart — WAIT for owner instruction.** Do NOT rebuild PWA/APK
+   unprompted.
 2. Owner tasks: password self-change, token revocations, HF credits decision.
 3. Pilot: recruit pilot community #1 (church, fellowship or faith-based org), 4-week concierge, metrics vs kill bar (>70% owner<24h, >50% contact<7d), price ladder.
 4. Build queue: roles depth tail, desktop follow-through, notifications polish, TRD/plan refresh.
