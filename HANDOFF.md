@@ -76,11 +76,13 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
   and tested; Hugging Face token exists but account has zero credits (parked);
   free-pools-only policy, no paid spend without budget-cap code (unbuilt).
 
-## 🟢 Mobile track: rebuilt v1.0.4, awaiting owner install confirm
+## 🟢 Mobile track: v1.0.4 CONFIRMED WORKING
 
-- Restart completed: PWA live again + TWA v1.0.4 (`android-v1.0.4+9`) with
-  flavicon icon. If the owner reports issues, get the exact symptom + device
-  details before changing anything.
+- Owner confirmed: v1.0.4 installs and OPENS to the ROE home screen.
+  (Direct release-asset links must be opened in Chrome — chat-app mini-browsers
+  block APK downloads; that was the only "direct link doesn't load" cause.)
+- Release `android-v1.0.4+9`: package `app.netlify.roe_pilot.twa`, versionCode 5,
+  flavicon icon, same key/fingerprint as assetlinks.
 
 ## Secrets map (names only — values live in env, never in chat/files)
 
@@ -129,8 +131,9 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
 
 ## What's next (priority order)
 
-1. **APK install confirm** → owner installs v1.0.4 fresh (uninstall old first)
-   from the in-app button → confirm opens to ROE home → bar-free check.
+1. **Mobile verified** ✅ v1.0.4 installs + opens. Remaining nicety: confirm
+   bar-free launch (no browser URL bar — assetlinks verification can take a few
+   hours on-device; if a bar shows, wait + relaunch before touching code).
 2. Owner tasks: password self-change, token revocations, HF credits decision.
 3. Pilot: recruit pilot community #1 (church, fellowship or faith-based org), 4-week concierge, metrics vs kill bar (>70% owner<24h, >50% contact<7d), price ladder.
 4. Build queue: roles depth tail, desktop follow-through, notifications polish, TRD/plan refresh.
