@@ -68,12 +68,10 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install platform + build-tools 34
+      - name: Install Android platform + build-tools 34
         run: |
-          sdkmanager "platforms;android-34" "build-tools;34.0.0"
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
       - name: Set up Gradle cache
         uses: gradle/actions/setup-gradle@v4
@@ -106,8 +104,9 @@ jobs:
         run: |
           APK=$(ls app/build/outputs/apk/release/*-release.apk | head -n 1)
           AAB=$(ls app/build/outputs/bundle/release/*.aab | head -n 1)
-          APKSIGNER="$ANDROID_HOME/build-tools/34.0.0/apksigner"
-          echo "Verifying $APK"
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -n 1)
+          test -x "$APKSIGNER" || { echo "apksigner not found"; exit 1; }
+          echo "Verifying $APK with $APKSIGNER"
           "$APKSIGNER" verify --verbose --print-certs "$APK" | grep -E "Verified|Signer|SHA-256" || true
           "$APKSIGNER" verify "$APK" || { echo "apksigner verify FAILED"; exit 1; }
           echo "--- artifacts ---"
