@@ -52,11 +52,11 @@ export default function Splash() {
     >
       <div className="flex flex-1 flex-col items-center justify-center px-6">
         <Image
-          src="/roe-logo.png"
+          src="/roe-logo-lockup.jpg"
           alt=""
-          width={120}
-          height={120}
-          className="rounded-3xl"
+          width={220}
+          height={122}
+          className="rounded-2xl bg-white object-contain"
           priority
         />
         <p className="font-mono2 mt-4 text-[11px] uppercase tracking-widest text-[#6B7280]">
