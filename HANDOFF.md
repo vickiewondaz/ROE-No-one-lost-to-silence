@@ -60,8 +60,10 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
   versionCode 2). Old hand-signed `public/ROE.apk` (v1-only, "package appears
   to be invalid") REMOVED from repo + download button now points at the GitHub
   Release asset (`releases/latest/download/app-release.apk`). Release:
-  `android-v1.0.1+6` (APK 3.8MB + AAB 3.7MB). Same package/key/fingerprint,
-  upgrades cleanly. Awaiting owner install confirm.
+  `android-v1.0.3+8` (APK + AAB). Same package/key/fingerprint,
+  upgrades cleanly. v1.0.2: roundel-only launcher icon. v1.0.3 fixed a launch
+  crash (splash animated icon must be @drawable, never @mipmap). Awaiting
+  owner install confirm.
 - Proof: smoke suite `scripts/smoke.mjs` (~120 checks incl. self-service PATCH, org profile, services CRUD);
   unit `npm test` (23 green); roles matrix `scripts/roles.mjs` 10/10 on seeded demo org;
   RLS negatives PASS on every migrate run. `npm run build` green, `tsc` clean.
