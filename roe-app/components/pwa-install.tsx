@@ -52,8 +52,7 @@ export default function PwaInstall() {
     <Card>
       <p className="font-display font-semibold">Get the ROE app</p>
       <a
-        href="/ROE.apk"
-        download="ROE.apk"
+        href="https://github.com/vickiewondaz/ROE-No-one-lost-to-silence/releases/latest/download/app-release.apk"
         className="mt-1 block text-center text-[13px] font-medium text-[#0D9488]"
       >
         Prefer a file? Download the Android app (.apk) →

@@ -56,11 +56,12 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
   15-min time gate. Old square logo fully purged (file deleted, zero references).
 - PWA live + proven: manifest + 3 icons + SW (shell caching, `/api/*` NEVER cached),
   one-tap install card, offline login renders from cache, zero JS errors.
-- APK: `public/ROE.apk` (TWA sideload, 1.4MB) signed v1 via stdlib-only
-  `.apk-work/sign_apk.py`; signature mathematically proven valid (independent
-  RSA re-verify: recomputed == in-file); assetlinks + fingerprint wired, download
-  button in More tab. ⚠️ OPEN: owner reports "package appears to be invalid" on
-  install — under investigation (see below).
+- APK: REPLACED by CI-built TWA (`roe-app/android/`, Gradle + apksigner v1+v2,
+  versionCode 2). Old hand-signed `public/ROE.apk` (v1-only, "package appears
+  to be invalid") REMOVED from repo + download button now points at the GitHub
+  Release asset (`releases/latest/download/app-release.apk`). Release:
+  `android-v1.0.1+6` (APK 3.8MB + AAB 3.7MB). Same package/key/fingerprint,
+  upgrades cleanly. Awaiting owner install confirm.
 - Proof: smoke suite `scripts/smoke.mjs` (~120 checks incl. self-service PATCH, org profile, services CRUD);
   unit `npm test` (23 green); roles matrix `scripts/roles.mjs` 10/10 on seeded demo org;
   RLS negatives PASS on every migrate run. `npm run build` green, `tsc` clean.
@@ -140,8 +141,8 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
 
 ## What's next (priority order)
 
-1. **APK install failure** (above) → fix → re-sign → commit → deploy → owner re-downloads
-   from `https://roe-pilot.netlify.app/ROE.apk` → confirm installs → bar-free check via assetlinks.
+1. **APK install confirm** → owner downloads from the in-app button (GitHub
+   Release asset) → confirm installs → bar-free check via assetlinks.
 2. Owner tasks: password self-change, token revocations, HF credits decision.
 3. Pilot: recruit pilot community #1 (church, fellowship or faith-based org), 4-week concierge, metrics vs kill bar (>70% owner<24h, >50% contact<7d), price ladder.
 4. Build queue: roles depth tail, desktop follow-through, notifications polish, TRD/plan refresh.
