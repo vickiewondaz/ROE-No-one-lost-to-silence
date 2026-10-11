@@ -4,7 +4,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Shell, Card } from "@/components/ui";
-import PwaInstall from "@/components/pwa-install";
 
 const FRAMES: [string, string][] = [
   ["P01 Login", "/login"],
@@ -91,9 +90,6 @@ export default function More() {
       >
         Change password →
       </Link>
-      <div className="mt-2">
-        <PwaInstall />
-      </div>
       <h2 className="font-display mt-4 text-[16px] font-semibold">
         Notifications{unread.length > 0 ? ` · ${unread.length} new` : ""}
       </h2>

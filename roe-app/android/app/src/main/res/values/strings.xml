@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">ROE</string>
-    <!-- 1:1 trust with the PWA origin. Site side lives at
-         https://roe-pilot.netlify.app/.well-known/assetlinks.json -->
-    <string name="asset_statements">[{ \"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": {\"namespace\": \"web\", \"site\": \"https://roe-pilot.netlify.app\"} }]</string>
-</resources>

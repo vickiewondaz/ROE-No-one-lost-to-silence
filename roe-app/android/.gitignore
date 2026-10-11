@@ -1,9 +1,0 @@
-.gradle/
-build/
-app/build/
-local.properties
-# Release signing material must NEVER be committed — CI injects it from secrets.
-*.jks
-*.p12
-*.keystore
-keystore.properties

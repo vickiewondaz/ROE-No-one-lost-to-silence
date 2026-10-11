@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Brand: teal-600 primary, calm light background (matches PWA theme). -->
-    <color name="roe_teal">#0D9488</color>
-    <color name="splash_bg">#F8FAF9</color>
-    <color name="ic_launcher_background">#F8FAF9</color>
-</resources>
