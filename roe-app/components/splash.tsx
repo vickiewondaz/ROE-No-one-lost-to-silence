@@ -15,10 +15,14 @@ export default function Splash() {
   useEffect(() => {
     let t1: ReturnType<typeof setTimeout> | undefined;
     let t2: ReturnType<typeof setTimeout> | undefined;
+    // Time gate (not session-only): reloads in the same tab kept hiding the
+    // splash, so testers thought it was gone. Shows when last seen >15 min ago.
+    const KEY = "roe.splashat";
     try {
-      if (sessionStorage.getItem("roe.splashed")) return;
+      const last = Number(localStorage.getItem(KEY) ?? 0);
+      if (Date.now() - last < 15 * 60 * 1000) return;
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        sessionStorage.setItem("roe.splashed", "1");
+        localStorage.setItem(KEY, String(Date.now()));
         return;
       }
     } catch {
@@ -29,7 +33,7 @@ export default function Splash() {
     t2 = setTimeout(() => {
       setShow(false);
       try {
-        sessionStorage.setItem("roe.splashed", "1");
+        localStorage.setItem(KEY, String(Date.now()));
       } catch {}
     }, 1800);
     return () => {

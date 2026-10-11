@@ -46,17 +46,17 @@ export default function Login() {
           alt=""
           fill
           sizes="(max-width: 480px) 100vw, 480px"
-          className="object-cover object-bottom opacity-45"
+          className="object-cover object-bottom opacity-60"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAF9]/30 via-[#F8FAF9]/55 to-[#F8FAF9]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAF9]/20 via-[#F8FAF9]/45 to-[#F8FAF9]" />
       </div>
       <div className="relative px-6 pb-6 pt-10 text-center">
         <Image
           src="/roe-logo-lockup.jpg"
           alt="ROE — No one lost to silence"
-          width={320}
-          height={177}
+          width={240}
+          height={133}
           className="mx-auto rounded-2xl bg-white object-contain"
           priority
         />

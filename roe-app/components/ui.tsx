@@ -27,9 +27,6 @@ export function Shell({
         <div className="px-2">
           <OrgBrand compact />
         </div>
-        <p className="font-mono2 whitespace-nowrap px-2 text-[11px] uppercase tracking-widest text-[#6B7280]">
-          ROE · No one lost to silence
-        </p>
         <RailNav active={tab} />
       </aside>
       <div className="flex min-h-full w-full max-w-[480px] flex-col lg:max-w-2xl">
@@ -37,9 +34,6 @@ export function Shell({
         <div className="flex items-center gap-3">
           {back && <BackButton href={back} />}
           <div className="min-w-0 flex-1">
-            <p className="font-mono2 text-[11px] uppercase tracking-widest text-[#6B7280]">
-              ROE · No one lost to silence
-            </p>
             <h1 className="font-display text-[20px] font-semibold leading-tight">
               {title}
             </h1>
