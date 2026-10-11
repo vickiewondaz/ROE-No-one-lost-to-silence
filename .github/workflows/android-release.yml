@@ -68,24 +68,24 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Android platform + build-tools 34
+      - name: Install Android platform + build-tools 36
         run: |
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           test -x "$SDKMANAGER" || SDKMANAGER=$(ls "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager | head -n 1)
           test -x "$SDKMANAGER" || { echo "sdkmanager not found under $ANDROID_HOME"; exit 1; }
           yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
-          "$SDKMANAGER" --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          "$SDKMANAGER" --install "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
       - name: Set up Gradle cache
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Install Gradle 8.7
+      - name: Install Gradle 8.13
         run: |
-          if [ ! -x /tmp/gradle-8.7/bin/gradle ]; then
-            curl -sL https://services.gradle.org/distributions/gradle-8.7-bin.zip -o /tmp/gradle.zip
+          if [ ! -x /tmp/gradle-8.13/bin/gradle ]; then
+            curl -sL https://services.gradle.org/distributions/gradle-8.13-bin.zip -o /tmp/gradle.zip
             unzip -q /tmp/gradle.zip -d /tmp
           fi
-          /tmp/gradle-8.7/bin/gradle --version
+          /tmp/gradle-8.13/bin/gradle --version
 
       - name: Decode release keystore
         env:
@@ -101,7 +101,7 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          /tmp/gradle-8.7/bin/gradle --no-daemon assembleRelease bundleRelease
+          /tmp/gradle-8.13/bin/gradle --no-daemon assembleRelease bundleRelease
 
       - name: Verify signatures (v1 + v2) and fingerprint
         run: |

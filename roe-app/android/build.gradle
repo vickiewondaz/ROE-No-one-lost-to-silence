@@ -1,5 +1,5 @@
 // Top-level build file for the ROE Trusted Web Activity wrapper.
-// Requires Android Gradle Plugin 8.5.x + Gradle 8.7 + JDK 17 (see CI workflow).
+// Requires Android Gradle Plugin 8.12.x + Gradle 8.13 + JDK 17 (see CI workflow).
 plugins {
-    id 'com.android.application' version '8.5.2' apply false
+    id 'com.android.application' version '8.12.0' apply false
 }
