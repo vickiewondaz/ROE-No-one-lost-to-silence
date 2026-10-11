@@ -52,7 +52,8 @@ android {
 
 dependencies {
     // Trusted Web Activity launcher (falls back to Custom Tab where TWA is unavailable).
-    implementation 'com.github.GoogleChrome.android-browser-helper:androidbrowserhelper:2.5.0'
+    // Published on the Google Maven repo (see android-browser-helper README).
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.7.3'
     // Android 12+ splash-screen API backing Theme.SplashScreen.*.
     implementation 'androidx.core:core-splashscreen:1.0.1'
 }

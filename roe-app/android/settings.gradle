@@ -10,8 +10,6 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // android-browser-helper (Trusted Web Activity launcher) is published via JitPack.
-        maven { url = uri("https://jitpack.io") }
     }
 }
 rootProject.name = "ROE"
