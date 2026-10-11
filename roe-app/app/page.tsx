@@ -23,11 +23,11 @@ export default function Landing() {
       <Splash />
       <div className="flex flex-col items-center text-center">
         <Image
-          src="/roe-logo-lockup.jpg"
+          src="/roe-logo-lockup.png"
           alt="ROE — No one lost to silence"
           width={220}
           height={122}
-          className="rounded-2xl bg-white object-contain"
+          className="object-contain"
           priority
         />
       </div>

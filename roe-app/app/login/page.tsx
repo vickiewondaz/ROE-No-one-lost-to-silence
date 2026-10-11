@@ -53,11 +53,11 @@ export default function Login() {
       </div>
       <div className="relative px-6 pb-6 pt-10 text-center">
         <Image
-          src="/roe-logo-lockup.jpg"
+          src="/roe-logo-lockup.png"
           alt="ROE — No one lost to silence"
           width={240}
           height={133}
-          className="mx-auto rounded-2xl bg-white object-contain"
+          className="mx-auto object-contain"
           priority
         />
       </div>
