@@ -51,6 +51,13 @@ export default function PwaInstall() {
   return (
     <Card>
       <p className="font-display font-semibold">Get the ROE app</p>
+      <a
+        href="/ROE.apk"
+        download="ROE.apk"
+        className="mt-1 block text-center text-[13px] font-medium text-[#0D9488]"
+      >
+        Prefer a file? Download the Android app (.apk) →
+      </a>
       {deferred ? (
         <>
           <p className="mt-1 text-[13px] text-[#6B7280]">

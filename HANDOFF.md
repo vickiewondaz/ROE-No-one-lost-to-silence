@@ -48,6 +48,13 @@ Better Auth + Postgres (Neon), hosted on Netlify.
   RLS negatives PASS on every migrate run. `npm run build` green, `tsc` clean.
 - Roles: `senior` ≈ `admin` for org management (reads + writes) — admin UI admits
   senior and every API gate honours it; `care`/`member` stay scoped, platform stays separate.
+- Android: `public/ROE.apk` (TWA of prod PWA, package `app.netlify.roe_pilot.twa`)
+  signed v1 with the key in `~/roe-android-key/` (NEVER in repo; back it up —
+  same key needed for updates + assetlinks). Fingerprint
+  `D093571D…A49E9`, wired in `public/.well-known/assetlinks.json`. Re-sign
+  flow: PWABuilder package → `.apk-work/sign_apk.py` (stdlib-only) → verify
+  with Node `crypto.verify` (NOT openssl CLI `cms -verify`, which rejects
+  valid v1 signatures here). Sideload-tested by owner on receipt.
 - Prod DB holds: orgs `grace-pilot` + `cac`, 2 users (both the owner: admin + super-admin),
   65-team directory + General Fellowship in grace-pilot, owner WhatsApp set on
   grace-pilot for tap-to-chat tests, zero test residue (cleaned repeatedly).

@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .neon
+
+# local android signing work (key-adjacent artifacts stay off git)
+.apk-work/

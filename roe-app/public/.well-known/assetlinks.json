@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.netlify.roe_pilot.twa",
+      "sha256_cert_fingerprints": [
+        "D093571D50195C3175AC61381AEE43CB9882D42597C807F4C2456767434A49E9"
+      ]
+    }
+  }
+]
