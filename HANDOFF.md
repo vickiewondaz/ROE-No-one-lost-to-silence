@@ -91,9 +91,10 @@ Better Auth + Postgres (Neon), hosted on Netlify.
 
 ## What's next (priority order)
 
-1. ~~Prod deploy catch-up~~ DONE 11 Oct 2026 (CLI deploys `a6ec63e`, `03f13f8`,
-   then `71e7e10`: fingerprint 200/404/401 green, splash/favicon/landing-vista/
-   sign-in lockup/trimmed copy all live, prod clean at 67 groups + 2 users).
+1. ~~Prod deploy catch-up~~ DONE 11 Oct 2026 (CLI deploys through `b73a616`:
+   fingerprint 200/404/401 green, transparent lockup, no-headline landing,
+   splash-with-photo, favicon, sign-in lockup all live, prod clean at
+   67 groups + 2 users).
 2. Owner tasks: password self-change, token revocations, HF credits decision.
 3. Pilot: recruit pilot community #1 (church, fellowship or faith-based org), 4-week concierge, metrics vs kill bar (>70% owner<24h, >50% contact<7d), price ladder.
 4. Build queue: roles depth tail, desktop follow-through, notifications polish, TRD/plan refresh.
