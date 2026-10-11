@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Launcher theme: system splash (API 31+) + legacy window background below that. -->
+    <style name="Theme.ROE.Launcher" parent="Theme.SplashScreen.IconBackground">
+        <item name="windowSplashScreenBackground">@color/splash_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.ROE</item>
+        <item name="android:windowBackground">@drawable/splash</item>
+    </style>
+
+    <!-- Post-splash host theme. The TWA itself renders the PWA; this only
+         colours the status/nav bars around it. -->
+    <style name="Theme.ROE" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/roe_teal</item>
+        <item name="android:navigationBarColor">@color/splash_bg</item>
+        <item name="android:windowBackground">@color/splash_bg</item>
+    </style>
+</resources>

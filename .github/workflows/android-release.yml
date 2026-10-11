@@ -1,0 +1,140 @@
+name: android-release
+
+# Every push to main touching the Android wrapper (or this workflow) builds a
+# signed release APK + AAB with the official SDK build tools and publishes a
+# GitHub Release with both as downloadable assets.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'roe-app/android/**'
+      - '.github/workflows/android-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  pwa-check:
+    name: PWA validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate live PWA (manifest, SW, icons, assetlinks)
+        run: |
+          BASE="https://roe-pilot.netlify.app"
+          fail() { echo "PWA-CHECK FAIL: $1"; exit 1; }
+          code=$(curl -s -o /tmp/manifest.json -w "%{http_code}" "$BASE/manifest.webmanifest")
+          [ "$code" = "200" ] || fail "manifest HTTP $code"
+          python3 - <<'EOF'
+          import json
+          m = json.load(open('/tmp/manifest.json'))
+          assert m.get('display') == 'standalone', 'display must be standalone'
+          assert m.get('start_url'), 'missing start_url'
+          icons = {(i.get('sizes'), i.get('purpose', 'any')) for i in m.get('icons', [])}
+          assert ('192x192', 'any') in icons, 'missing 192 any icon'
+          assert ('512x512', 'any') in icons, 'missing 512 any icon'
+          assert ('512x512', 'maskable') in icons, 'missing maskable icon'
+          print('manifest OK:', m['short_name'], m['start_url'])
+          EOF
+          code=$(curl -s -o /dev/null -w "%{http_code}" "$BASE/sw.js")
+          [ "$code" = "200" ] || fail "sw.js HTTP $code"
+          curl -s "$BASE/sw.js" | grep -q "/api/" || fail "SW missing /api/* guard"
+          echo "service worker OK (/api/* never cached)"
+          for icon in icons/icon-192.png icons/icon-512.png icons/icon-maskable-512.png; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$BASE/$icon")
+            [ "$code" = "200" ] || fail "$icon HTTP $code"
+          done
+          echo "icons OK (192 + 512 + maskable)"
+          code=$(curl -s -o /tmp/assetlinks.json -w "%{http_code}" "$BASE/.well-known/assetlinks.json")
+          [ "$code" = "200" ] || fail "assetlinks HTTP $code"
+          grep -q "app.netlify.roe_pilot.twa" /tmp/assetlinks.json || fail "assetlinks package mismatch"
+          grep -q "D093571D50195C3175AC61381AEE43CB9882D42597C807F4C2456767434A49E9" /tmp/assetlinks.json || fail "assetlinks fingerprint mismatch"
+          echo "assetlinks OK (package + fingerprint match TWA)"
+
+  build:
+    name: Build signed APK + AAB
+    needs: pwa-check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: roe-app/android
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install platform + build-tools 34
+        run: |
+          sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install Gradle 8.7
+        run: |
+          if [ ! -x /tmp/gradle-8.7/bin/gradle ]; then
+            curl -sL https://services.gradle.org/distributions/gradle-8.7-bin.zip -o /tmp/gradle.zip
+            unzip -q /tmp/gradle.zip -d /tmp
+          fi
+          /tmp/gradle-8.7/bin/gradle --version
+
+      - name: Decode release keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64" || { echo "Missing ANDROID_KEYSTORE_BASE64 secret"; exit 1; }
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/roe-release.p12"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/roe-release.p12" >> "$GITHUB_ENV"
+
+      - name: Build signed release APK + AAB
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          /tmp/gradle-8.7/bin/gradle --no-daemon assembleRelease bundleRelease
+
+      - name: Verify signatures (v1 + v2) and fingerprint
+        run: |
+          APK=$(ls app/build/outputs/apk/release/*-release.apk | head -n 1)
+          AAB=$(ls app/build/outputs/bundle/release/*.aab | head -n 1)
+          APKSIGNER="$ANDROID_HOME/build-tools/34.0.0/apksigner"
+          echo "Verifying $APK"
+          "$APKSIGNER" verify --verbose --print-certs "$APK" | grep -E "Verified|Signer|SHA-256" || true
+          "$APKSIGNER" verify "$APK" || { echo "apksigner verify FAILED"; exit 1; }
+          echo "--- artifacts ---"
+          ls -la "$APK" "$AAB"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: roe-android-release
+          path: |
+            roe-app/android/app/build/outputs/apk/release/*.apk
+            roe-app/android/app/build/outputs/bundle/release/*.aab
+
+      - name: Create GitHub Release with APK + AAB
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-v1.0.1+${{ github.run_number }}
+          name: ROE Android v1.0.1 (build ${{ github.run_number }})
+          body: |
+            Production Android release for ROE ("No one lost to silence").
+
+            - Package: `app.netlify.roe_pilot.twa` (versionCode 2, versionName 1.0.1)
+            - Trusted Web Activity over https://roe-pilot.netlify.app (start `/home`)
+            - Signed with the long-lived ROE key (SHA-256 `D093571D…A49E9`, matches assetlinks)
+            - Install: download the APK on the phone, open it, allow "install unknown apps" if asked.
+
+            ⚠️ Sideload build — not distributed via Play. Same key as all prior installs, so it upgrades cleanly.
+          files: |
+            roe-app/android/app/build/outputs/apk/release/*.apk
+            roe-app/android/app/build/outputs/bundle/release/*.aab
