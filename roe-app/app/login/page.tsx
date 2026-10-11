@@ -38,28 +38,31 @@ export default function Login() {
   }
 
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-[480px] flex-col bg-[#F8FAF9]">
-      <div className="bg-gradient-to-b from-[#E0F2FE] to-[#F0FDFA] px-6 pb-6 pt-10 text-center">
+    <div className="relative mx-auto flex min-h-full w-full max-w-[480px] flex-col bg-[#F8FAF9]">
+      {/* Faint shepherd wash behind the doorway (portrait photo, ~15%). */}
+      <div aria-hidden className="absolute inset-0 overflow-hidden">
         <Image
-          src="/roe-logo.png"
-          alt="ROE logo"
-          width={64}
-          height={64}
-          className="mx-auto rounded-2xl"
+          src="/splash-shepherd.jpg"
+          alt=""
+          fill
+          sizes="(max-width: 480px) 100vw, 480px"
+          className="object-cover object-bottom opacity-45"
           priority
         />
-        <p className="font-mono2 mt-3 text-[11px] uppercase tracking-widest text-[#6B7280]">
-          ROE · No one lost to silence
-        </p>
-        <h1 className="font-display mt-1 text-[26px] font-bold leading-tight">
-          Welcome back
-        </h1>
-        <p className="mt-1 text-[14px] text-[#6B7280]">
-          Your people are waiting. Pick up where you left off.
-        </p>
+        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAF9]/30 via-[#F8FAF9]/55 to-[#F8FAF9]" />
+      </div>
+      <div className="relative px-6 pb-6 pt-10 text-center">
+        <Image
+          src="/roe-logo-lockup.jpg"
+          alt="ROE — No one lost to silence"
+          width={280}
+          height={155}
+          className="mx-auto rounded-2xl bg-white object-contain"
+          priority
+        />
       </div>
       <form
-        className="mx-4 -mt-2 flex flex-col gap-4 rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-[0_2px_12px_rgba(15,118,110,0.08)]"
+        className="relative mx-4 -mt-2 flex flex-col gap-4 rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-[0_2px_12px_rgba(15,118,110,0.08)]"
         onSubmit={submit}
       >
         <Field label="Email">
@@ -96,7 +99,7 @@ export default function Login() {
         </Field>
         <PrimaryButton type="submit">{busy ? "Signing in…" : "Sign in"}</PrimaryButton>
       </form>
-      <div className="px-6 pb-8 pt-4 text-center">
+      <div className="relative px-6 pb-8 pt-4 text-center">
         <a href="/forgot" className="text-[14px] font-medium text-[#0D9488]">
           Forgot password?
         </a>

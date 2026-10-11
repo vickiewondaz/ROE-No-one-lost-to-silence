@@ -91,7 +91,8 @@ Better Auth + Postgres (Neon), hosted on Netlify.
 
 ## What's next (priority order)
 
-1. Prod deploy catch-up (dashboard trigger) → verify → clean.
+1. ~~Prod deploy catch-up~~ DONE 11 Oct 2026 (`a6ec63e` + `03f13f8` via CLI,
+   fingerprint 200/404/401 green, new brand/copy live, prod clean) → next deploy same path.
 2. Owner tasks: password self-change, token revocations, HF credits decision.
 3. Pilot: recruit pilot community #1 (church, fellowship or faith-based org), 4-week concierge, metrics vs kill bar (>70% owner<24h, >50% contact<7d), price ladder.
 4. Build queue: roles depth tail, desktop follow-through, notifications polish, TRD/plan refresh.
