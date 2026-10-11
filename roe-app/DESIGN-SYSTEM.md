@@ -93,6 +93,7 @@ blue info pair with the same sentence shape (see §5).
 | `JourneyStepper` | `ui.tsx` | 5 dots + connector line. Staff tone: New→Assigned→Contacted→Connecting→Connected. Member tone (`tone="member"`): Welcome→Matched→First hello→Connecting→Belonging. `memberJourneyLabel()` for pills. |
 | `ContactButtons` | `ui.tsx` | One-tap Call / WhatsApp pair. **Always outside any `<Link>`** (stopPropagation included). Shown on worker list rows; hidden in member-own views. |
 | `OfflineBanner` | `offline-banner.tsx` | Amber "Saved on this device only — not sent" panel. Rendered on every destination reachable by an offline fallback (Person created, Interaction recorded, profile, Connection confirmed). Shown once per flag. |
+| `Splash` | `splash.tsx` | Launch moment on landing: full-screen ivory, 96px logo, mono ROE, tagline. Once per session (~1.1s + fade), skipped under reduced-motion. `apple-icon.png` + `favicon.ico` carry the same mark to tabs and home screens. |
 | `ServicesUpcoming` | `services-upcoming.tsx` | "Services" (staff) / "What's on" (members): next 5 occurrences, Today/Tomorrow/date labels, `✦` for specials. Null when signed out or calendar empty. |
 | `CelebrateActions` | `celebrate.tsx` | Copy-text + Mark-greeted (channel pick) + recorded state. Human always sends; nothing auto-sends. Templates say "faith community", never "church family". |
 
