@@ -59,7 +59,7 @@ export default function PeoplePage() {
             type="button"
             onClick={() => setFilter(f)}
             aria-pressed={filter === f}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-[13px] font-medium ${
+            className={`tap-target shrink-0 rounded-full px-3 text-[13px] font-medium ${
               filter === f ? "bg-[#0D9488] text-white" : "bg-white text-[#6B7280] border border-[#E5E7EB]"
             }`}
           >
@@ -72,7 +72,7 @@ export default function PeoplePage() {
         {filter !== "All" ? ` · ${filter}` : ""}
         {q.trim() ? ` · matching “${q.trim()}”` : ""}
       </p>
-      <div className="mt-2 flex flex-col gap-2">
+      <div className="mt-2 flex flex-col gap-2 lg:grid lg:grid-cols-2">
         {list.map((p) => (
           <Card key={p.id}>
             <Link href={`/people/${p.id}`}>
@@ -90,6 +90,7 @@ export default function PeoplePage() {
           </Card>
         ))}
         {list.length === 0 && (
+          <div className="lg:col-span-2">
           <Card>
             <p className="font-medium">
               {q.trim() ? `No results for “${q.trim()}”.` : `Nobody at “${filter}” yet.`}
@@ -98,6 +99,7 @@ export default function PeoplePage() {
               Try another name, clear the filter, or add them as a new person.
             </p>
           </Card>
+          </div>
         )}
       </div>
     </Shell>
