@@ -31,6 +31,12 @@ export async function personDTO(
     .where(eq(interactions.personId, p.id))
     .orderBy(desc(interactions.date))
     .limit(1);
+  const firstInter = await tx
+    .select()
+    .from(interactions)
+    .where(eq(interactions.personId, p.id))
+    .orderBy(interactions.date)
+    .limit(1);
   const conns = await tx
     .select()
     .from(connections)
@@ -79,6 +85,15 @@ export async function personDTO(
     lastContactAt: inter[0] ? new Date(inter[0].date).toISOString() : null,
     createdAt:
       p.createdAt instanceof Date ? p.createdAt.toISOString() : p.createdAt,
+    // First hello ever + first confirmed group connection (pilot metrics).
+    firstContactAt: firstInter[0] ? new Date(firstInter[0].date).toISOString() : null,
+    connectedAt: (() => {
+      const confirmed = (conns as { status: string; at: Date | string }[])
+        .filter((c) => c.status === "Confirmed")
+        .map((c) => new Date(c.at).getTime())
+        .filter((t) => !Number.isNaN(t));
+      return confirmed.length > 0 ? new Date(Math.min(...confirmed)).toISOString() : null;
+    })(),
     group: mems[0]?.name,
   };
 }

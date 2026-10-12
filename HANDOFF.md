@@ -51,6 +51,10 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
   tests in `lib/person-summary.ts`), one-line worker summary on profiles,
   "App updates" card on More (latest GitHub release + reinstall button),
   release-notes habit (`roe-app/RELEASE_NOTES.md`). Tests 33 green.
+- Pilot pulse tile (admin/senior): live >70%-in-24h / >50%-in-7d bars over the
+  28-day newcomer cohort (first-contact + first-confirmed-connection dates from
+  `personDTO`; pure helper + tests in `lib/pilot-metrics.ts`). Empty states
+  audited — all teach already. Tests 35 green.
 - Plus: invites (hashed, single-use, 7d) + request-to-join with throttles, admin console
   (team/invites/audit/roles/leads), dark platform tier (orgs, first-admin invites, suspend),
   password change + recovery email, celebrations (milestones, upcoming, acknowledge flow),

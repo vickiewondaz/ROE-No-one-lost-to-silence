@@ -10,6 +10,62 @@ import { CelebrateActions } from "@/components/celebrate";
 import { loadActions, type Person } from "@/lib/data";
 import { usePeople } from "@/lib/use-people";
 import { daysSinceContact, isSilent } from "@/lib/silence";
+import {
+  COHORT_DAYS,
+  CONNECT_TARGET_PCT,
+  CONTACT_TARGET_PCT,
+  pilotPulse,
+} from "@/lib/pilot-metrics";
+
+// The pilot selling itself: live success-bar numbers over the 28-day cohort.
+function PilotPulse({ people }: { people: Person[] }) {
+  const pulse = pilotPulse(people);
+  const rows = [
+    { label: "Contacted in 24h", pct: pulse.contactedPct, target: CONTACT_TARGET_PCT },
+    { label: "Connected in 7 days", pct: pulse.connectedPct, target: CONNECT_TARGET_PCT },
+  ];
+  return (
+    <Card>
+      <p className="font-display text-[15px] font-semibold">Pilot pulse</p>
+      {pulse.cohort === 0 ? (
+        <p className="mt-1 text-[13px] text-[#6B7280]">
+          No newcomers in the last {COHORT_DAYS} days yet — the bars fill as people arrive.
+        </p>
+      ) : (
+        <>
+          <p className="mt-0.5 text-[13px] text-[#6B7280]">
+            {pulse.cohort} newcomer{pulse.cohort === 1 ? "" : "s"}, last {COHORT_DAYS} days
+          </p>
+          <div className="mt-2 flex flex-col gap-2">
+            {rows.map((r) => (
+              <div key={r.label}>
+                <div className="flex items-baseline justify-between text-[13px]">
+                  <span className="text-[#374151]">{r.label}</span>
+                  <span className="font-mono2 text-[#6B7280]">
+                    {r.pct}% <span className="text-[#9CA3AF]">/ {r.target}%</span>
+                  </span>
+                </div>
+                <div
+                  role="progressbar"
+                  aria-valuenow={r.pct}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`${r.label}: ${r.pct} percent, target ${r.target}`}
+                  className="mt-1 h-2 overflow-hidden rounded-full bg-[#E5E7EB]"
+                >
+                  <div
+                    className={`h-full rounded-full ${r.pct >= r.target ? "bg-[#0D9488]" : "bg-[#F59E0B]"}`}
+                    style={{ width: `${Math.min(100, r.pct)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </Card>
+  );
+}
 
 // The pain, made visible: how many people have heard nothing for 14+ days.
 // Shared by the admin/senior dashboard and the group-leader view.
@@ -166,6 +222,11 @@ export default function HomePage() {
             </div>
           );
         })()}
+      {["admin", "senior"].includes(role) && (
+        <div className="mb-3">
+          <PilotPulse people={people} />
+        </div>
+      )}
 
       <SectionHead title="Needs attention" count={overdue.length + today.length + fresh.length} />
       <div className="mt-2 flex flex-col gap-2">

@@ -24,6 +24,8 @@ export interface Person {
   lastContact?: string;
   lastContactAt?: string | null;
   createdAt?: string;
+  firstContactAt?: string | null;
+  connectedAt?: string | null;
   group?: string;
 }
 
