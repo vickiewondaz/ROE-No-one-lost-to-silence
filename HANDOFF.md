@@ -52,7 +52,10 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
   `components/ui.tsx` + `components/nav.tsx`).
 - Brand: new ROE lockup everywhere (transparent PNG, no white boxes), shepherd
   photography (splash + landing backdrop + login wash), favicon.ico + apple-icon
-  rebuilt from the lockup, trimmed landing (lockup + 2 buttons only), splash with
+  rebuilt from the lockup, landing is now splash → auto-forward to sign-in
+  (signed-in visitors go straight to /home; first-timers never land on home),
+  login has time-aware greeting ("Good morning, welcome to ROE." etc.) +
+  typing animated tagline + bare APK button (no writeup), splash with
   15-min time gate. Old square logo fully purged (file deleted, zero references).
 - PWA + APK: REBUILT on owner instruction (restart). PWA layer restored
   (manifest/SW/icons/install UI, live + validated in CI). TWA wrapper v1.0.4
