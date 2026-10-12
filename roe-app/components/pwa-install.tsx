@@ -81,8 +81,8 @@ export default function PwaInstall() {
           {isIos
             ? "On iPhone: tap Share in Safari, then “Add to Home Screen”."
             : "Open this page in Chrome or Edge on Android and the install button appears here."}
-        </p>
-      )}
-    </Card>
+          </p>
+        ))}
+      </Card>
   );
 }
