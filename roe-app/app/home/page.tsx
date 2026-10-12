@@ -9,7 +9,7 @@ import ServicesUpcoming from "@/components/services-upcoming";
 import { CelebrateActions } from "@/components/celebrate";
 import { loadActions, type Person } from "@/lib/data";
 import { usePeople } from "@/lib/use-people";
-import { isSilent } from "@/lib/silence";
+import { daysSinceContact, isSilent } from "@/lib/silence";
 
 // The pain, made visible: how many people have heard nothing for 14+ days.
 // Shared by the admin/senior dashboard and the group-leader view.
@@ -132,6 +132,40 @@ export default function HomePage() {
         </Link>
       )}
       {["admin", "senior"].includes(role) && <SilentStrip people={people} />}
+      {["admin", "senior"].includes(role) &&
+        (() => {
+          // Auto-escalation: silent AND owned by a worker → the worker has
+          // gone quiet too, so a senior must step in. No cron, no new tables:
+          // the flag derives from the same contact dates as the silent list.
+          const stale = people.filter(
+            (p) => isSilent(p) && p.assignee && p.assignee !== "Unassigned"
+          );
+          if (stale.length === 0) return null;
+          return (
+            <div className="mb-3">
+              <SectionHead title="Needs a senior" count={stale.length} />
+              <div className="mt-2 flex flex-col gap-2">
+                {stale.slice(0, 3).map((p) => (
+                  <Link key={p.id} href={`/people/${p.id}`}>
+                    <Card>
+                      <div className="flex items-center gap-3">
+                        <Avatar name={`${p.firstName} ${p.lastName}`} />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-display truncate font-semibold">
+                            {p.firstName} {p.lastName}
+                          </p>
+                          <p className="text-[13px] text-[#6B7280]">
+                            Quiet {daysSinceContact(p) ?? "many"} days · worker: {p.assignee} →
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
       <SectionHead title="Needs attention" count={overdue.length + today.length + fresh.length} />
       <div className="mt-2 flex flex-col gap-2">

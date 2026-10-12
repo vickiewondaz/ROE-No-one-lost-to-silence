@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Shell, Card } from "@/components/ui";
 import PwaInstall from "@/components/pwa-install";
+import AppUpdate from "@/components/app-update";
 
 const FRAMES: [string, string][] = [
   ["P01 Login", "/login"],
@@ -93,6 +94,9 @@ export default function More() {
       </Link>
       <div className="mt-2">
         <PwaInstall />
+      </div>
+      <div className="mt-2">
+        <AppUpdate />
       </div>
       <h2 className="font-display mt-4 text-[16px] font-semibold">
         Notifications{unread.length > 0 ? ` · ${unread.length} new` : ""}

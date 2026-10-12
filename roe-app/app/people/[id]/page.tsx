@@ -4,6 +4,7 @@
 // (P1 care) — a locked placeholder marks the boundary, never the content.
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
+import { firstWeekChecklist, summarizePerson } from "@/lib/person-summary";
 import { Shell, Card, StatusPill, Avatar, JourneyStepper, SectionHead, inputCls, memberJourneyLabel } from "@/components/ui";
 import OfflineBanner from "@/components/offline-banner";
 import { CelebrateActions } from "@/components/celebrate";
@@ -154,6 +155,15 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
             <div className="mt-1">
               <StatusPill text={isMember ? memberJourneyLabel(person.journey) : person.journey} />
             </div>
+            {!isMember && (
+              <p className="mt-2 border-t border-[#F3F4F6] pt-2 text-[13px] leading-snug text-[#374151]">
+                {summarizePerson(
+                  person,
+                  (feed ?? []).filter((e) => e.kind === "interaction").length,
+                  person.group
+                )}
+              </p>
+            )}
           </div>
         </div>
         {!isMember && (
@@ -181,6 +191,40 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
           </div>
         )}
       </Card>
+
+      {!isMember &&
+        (() => {
+          const firstWeek = firstWeekChecklist({
+            createdAt: person.createdAt,
+            interactionCount: (feed ?? []).filter((e) => e.kind === "interaction").length,
+            hasGroup: !!person.group,
+          });
+          return firstWeek.show ? (
+            <Card>
+              <p className="font-display text-[15px] font-semibold">First 7 days</p>
+              <p className="mt-0.5 text-[13px] text-[#6B7280]">
+                A newcomer's first week decides everything. Three steps:
+              </p>
+              <ul className="mt-2 flex flex-col gap-1.5">
+                {firstWeek.steps.map((s) => (
+                  <li key={s.key} className="flex items-start gap-2 text-[14px]">
+                    <span
+                      aria-hidden
+                      className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[12px] font-bold ${
+                        s.done ? "bg-[#0D9488] text-white" : "border-[1.5px] border-[#D1D5DB] text-transparent"
+                      }`}
+                    >
+                      ✓
+                    </span>
+                    <span className={s.done ? "text-[#6B7280] line-through" : "text-[#111827]"}>
+                      {s.label}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          ) : null;
+        })()}
 
       <div className="mt-4">
         <SectionHead title={isMember ? "My journey" : "Journey"} />

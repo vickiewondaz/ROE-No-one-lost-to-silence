@@ -45,6 +45,12 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
   strip — people with no contact in 14+ days (from `interactions.date`, fallback
   `people.created_at`; pure helper in `lib/silence.ts`, 5 unit tests). Taps through
   to People with a `Silent` filter chip (`/people#silent`). No migration.
+- Care depth: auto-escalation (silent + assigned worker → "Needs a senior"
+  section for admin/senior, no cron — derived from contact dates), first-7-days
+  3-step checklist on person pages (welcomed/contacted/group, pure helper +
+  tests in `lib/person-summary.ts`), one-line worker summary on profiles,
+  "App updates" card on More (latest GitHub release + reinstall button),
+  release-notes habit (`roe-app/RELEASE_NOTES.md`). Tests 33 green.
 - Plus: invites (hashed, single-use, 7d) + request-to-join with throttles, admin console
   (team/invites/audit/roles/leads), dark platform tier (orgs, first-admin invites, suspend),
   password change + recovery email, celebrations (milestones, upcoming, acknowledge flow),
