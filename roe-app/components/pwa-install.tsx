@@ -1,7 +1,8 @@
 "use client";
 // Install prompt: one-tap PWA install where the browser allows it
 // (Android Chrome/Edge via beforeinstallprompt), plain guidance elsewhere
-// (iPhone: Share → Add to Home Screen). Hidden once installed.
+// (iPhone: Share → Add to Home Screen). The card ALWAYS stays on the More
+// screen — even after install — so the APK/PWA links are there for reinstalls.
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui";
 
@@ -37,8 +38,6 @@ export default function PwaInstall() {
     };
   }, []);
 
-  if (installed) return null;
-
   async function install() {
     if (!deferred) return;
     try {
@@ -51,13 +50,20 @@ export default function PwaInstall() {
   return (
     <Card>
       <p className="font-display font-semibold">Get the ROE app</p>
+      {installed && (
+        <p className="mt-1 text-[13px] text-[#6B7280]">
+          Installed on this device. Links below stay here in case you ever need
+          to reinstall or fix an issue.
+        </p>
+      )}
       <a
         href="https://github.com/vickiewondaz/ROE-No-one-lost-to-silence/releases/latest/download/app-release.apk"
         className="mt-1 block text-center text-[13px] font-medium text-[#0D9488]"
       >
         Prefer a file? Download the Android app (.apk) →
       </a>
-      {deferred ? (
+      {!installed &&
+        (deferred ? (
         <>
           <p className="mt-1 text-[13px] text-[#6B7280]">
             Installs in one tap — opens full-screen, works offline for saved pages.
