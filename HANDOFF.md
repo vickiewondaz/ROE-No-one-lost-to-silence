@@ -124,11 +124,8 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
 
 ## Deploys (no CLI tokens survive — user revokes them)
 
-- Netlify: project `roe-pilot` is NOT linked to any Git repo (verified via API:
-  `repo: None`) — GitHub pushes NEVER auto-deploy. Deploy via CLI
-  (`netlify deploy --prod --build` from `roe-app/`, needs fresh owner token)
-  or dashboard. To restore auto-deploys: dashboard → Site configuration →
-  Build & deploy → Link repository (needs owner, one-time).
+- Netlify: project `roe-pilot` re-linked to GitHub (`main`, base `roe-app/`) —
+  pushes auto-deploy again. (Was unlinked with `repo: None`; fixed via API.)
 - Env vars live in Netlify dashboard (DB URLs, secrets, `OMNIROUTE_*`, `ALLOW_SETUP=false`).
 - Never commit `.env.local`, `.neon`, `.netlify`, `.apk-work/`, keystores, or any secret value.
 
