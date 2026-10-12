@@ -4,6 +4,7 @@
 // (P1 care) — a locked placeholder marks the boundary, never the content.
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
+import ReferralCard from "@/components/referral-card";
 import { firstWeekChecklist, summarizePerson } from "@/lib/person-summary";
 import { Shell, Card, StatusPill, Avatar, JourneyStepper, SectionHead, inputCls, memberJourneyLabel } from "@/components/ui";
 import OfflineBanner from "@/components/offline-banner";
@@ -61,6 +62,7 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
   const [mDay, setMDay] = useState("");
   const [mError, setMError] = useState("");
   const [isMember, setIsMember] = useState(false);
+  const [churchName, setChurchName] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/people/${id}`)
@@ -109,6 +111,7 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         if (j?.data?.role === "member") setIsMember(true);
+        if (j?.data?.orgName) setChurchName(j.data.orgName as string);
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -191,6 +194,12 @@ export default function Profile({ params }: { params: Promise<{ id: string }> })
           </div>
         )}
       </Card>
+
+      {!isMember && person.journey === "Connected" && (
+        <div className="mt-3">
+          <ReferralCard personName={person.firstName} churchName={churchName} />
+        </div>
+      )}
 
       {!isMember &&
         (() => {
