@@ -19,7 +19,7 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
 - Repo root (this machine): `/Users/mac/Documents/ROE-NO ONE IS LOST TO SILENCE`
 - GitHub: `vickiewondaz/ROE-No-one-lost-to-silence`, branch `main`
 - App code: `roe-app/` (routes in `app/`, shared UI in `components/`, DB schema in `lib/db/schema.ts`)
-- Live site: `https://roe-pilot.netlify.app` (Netlify project `roe-app`, team `vickie2`)
+- Live site: `https://roe-pilot.netlify.app` (Netlify project `roe-pilot`, team `vickie2`)
 - Database: Neon project `roe-pilot`, branch `production`, PG 18 (23 tables, RLS on)
 - Docs: `ROE - *.docx` (PRD/TRD/design), `ROE - IMPLEMENTATION PLAN.md`, `roe-app/RUNBOOK.md`,
   `roe-app/DESIGN-SYSTEM.md`, `roe-app/UI-SCREENS-AUTOCLAW.md`, `roe-app/UI-UX-FULL-FLOWS.md`, `autoclaw.md`
@@ -124,8 +124,11 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
 
 ## Deploys (no CLI tokens survive — user revokes them)
 
-- Netlify: needs fresh `NETLIFY_AUTH_TOKEN` (user pastes) OR dashboard Trigger deploy.
-  After deploy: remote smoke → lockdown verify → clean test rows → confirm.
+- Netlify: project `roe-pilot` is NOT linked to any Git repo (verified via API:
+  `repo: None`) — GitHub pushes NEVER auto-deploy. Deploy via CLI
+  (`netlify deploy --prod --build` from `roe-app/`, needs fresh owner token)
+  or dashboard. To restore auto-deploys: dashboard → Site configuration →
+  Build & deploy → Link repository (needs owner, one-time).
 - Env vars live in Netlify dashboard (DB URLs, secrets, `OMNIROUTE_*`, `ALLOW_SETUP=false`).
 - Never commit `.env.local`, `.neon`, `.netlify`, `.apk-work/`, keystores, or any secret value.
 
