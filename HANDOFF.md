@@ -124,8 +124,13 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
 
 ## Deploys (no CLI tokens survive — user revokes them)
 
-- Netlify: project `roe-pilot` re-linked to GitHub (`main`, base `roe-app/`) —
-  pushes auto-deploy again. (Was unlinked with `repo: None`; fixed via API.)
+- Netlify: project `roe-pilot` linked to GitHub (`main`, base `roe-app/`) but
+  BUILDS PAUSED (`stop_builds`) — Netlify lost GitHub access ("Host key
+  verification failed" on clone; owner revoked it with the tokens). Until the
+  owner re-authorizes the Netlify GitHub App, deploy via CLI
+  (`netlify deploy --prod --build` from `roe-app/`, needs fresh owner token).
+  After re-auth: unset `stop_builds` via API, push a test commit, watch a
+  green auto-build.
 - Env vars live in Netlify dashboard (DB URLs, secrets, `OMNIROUTE_*`, `ALLOW_SETUP=false`).
 - Never commit `.env.local`, `.neon`, `.netlify`, `.apk-work/`, keystores, or any secret value.
 
