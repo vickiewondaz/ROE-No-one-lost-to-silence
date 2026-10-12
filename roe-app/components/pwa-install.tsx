@@ -11,6 +11,22 @@ interface PromptEvent extends Event {
   userChoice: Promise<{ outcome: string }>;
 }
 
+export const APK_URL =
+  "https://github.com/vickiewondaz/ROE-No-one-lost-to-silence/releases/latest/download/app-release.apk";
+
+// Bare download button — no card, no writeup. For screens (like sign-in)
+// that just need the file link.
+export function ApkDownloadButton({ className = "" }: { className?: string }) {
+  return (
+    <a
+      href={APK_URL}
+      className={`tap-target flex h-11 items-center justify-center rounded-xl border-[1.5px] border-[#0D9488] bg-white/80 px-4 text-[14px] font-semibold text-[#0D9488] transition-all duration-200 hover:bg-[#F0FDFA] active:scale-[0.98] ${className}`}
+    >
+      Download the Android app (.apk) →
+    </a>
+  );
+}
+
 export default function PwaInstall() {
   const [deferred, setDeferred] = useState<PromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
@@ -57,7 +73,7 @@ export default function PwaInstall() {
         </p>
       )}
       <a
-        href="https://github.com/vickiewondaz/ROE-No-one-lost-to-silence/releases/latest/download/app-release.apk"
+        href={APK_URL}
         className="mt-1 block text-center text-[13px] font-medium text-[#0D9488]"
       >
         Prefer a file? Download the Android app (.apk) →

@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { PrimaryButton, Field, inputCls } from "@/components/ui";
+import WelcomeGreeting from "@/components/welcome-greeting";
+import { ApkDownloadButton } from "@/components/pwa-install";
 
 export default function Login() {
   const router = useRouter();
@@ -51,12 +53,15 @@ export default function Login() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAF9]/20 via-[#F8FAF9]/45 to-[#F8FAF9]" />
       </div>
-      <div className="relative px-6 pb-6 pt-10 text-center">
+      <div className="relative px-6 pb-2 pt-8">
+        <WelcomeGreeting />
+      </div>
+      <div className="relative px-6 pb-6 pt-4 text-center">
         <Image
           src="/roe-logo-lockup.png"
           alt="ROE — No one lost to silence"
-          width={240}
-          height={133}
+          width={210}
+          height={116}
           className="mx-auto object-contain"
           priority
         />
@@ -99,6 +104,9 @@ export default function Login() {
         </Field>
         <PrimaryButton type="submit">{busy ? "Signing in…" : "Sign in"}</PrimaryButton>
       </form>
+      <div className="relative mx-4 mt-3">
+        <ApkDownloadButton />
+      </div>
       <div className="relative px-6 pb-8 pt-4 text-center">
         <a href="/forgot" className="text-[14px] font-medium text-[#0D9488]">
           Forgot password?

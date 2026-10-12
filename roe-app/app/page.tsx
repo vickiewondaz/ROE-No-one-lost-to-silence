@@ -1,10 +1,23 @@
-// ROE opening screen — a doorway, not a brochure (Figma §3.2 public entry).
-// Entry: team signs in, invitees arrive via links, newcomers request via /join.
+// ROE opening screen — flash, then sign-in (first-timers never land on home).
+// Signed-in visitors go straight to /home.
 import Image from "next/image";
-import Link from "next/link";
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
 import Splash from "@/components/splash";
+import FirstRunForward from "./forward";
 
-export default function Landing() {
+export default async function Entry() {
+  let userId: string | undefined;
+  try {
+    const session = (await auth.api.getSession({
+      headers: await headers(),
+    })) as { user?: { id: string } } | null;
+    userId = session?.user?.id;
+  } catch {
+    userId = undefined;
+  }
+  if (userId) redirect("/home");
   return (
     <div className="relative min-h-screen w-full bg-[#F8FAF9]">
       {/* Shepherd vista behind the doorway, both widths; veils keep text readable. */}
@@ -20,38 +33,8 @@ export default function Landing() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAF9] via-[#F8FAF9]/80 to-[#F8FAF9]/55 lg:bg-gradient-to-r lg:from-[#F8FAF9] lg:via-[#F8FAF9]/90 lg:to-[#F8FAF9]/25" />
       </div>
       <div className="relative mx-auto flex min-h-screen w-full max-w-[480px] flex-col px-6 pb-10 pt-14 lg:mx-0 lg:max-w-[560px] lg:px-16 lg:pt-20">
-      <Splash />
-      <div className="flex flex-col items-center text-center">
-        <Image
-          src="/roe-logo-lockup.png"
-          alt="ROE — No one lost to silence"
-          width={220}
-          height={122}
-          className="object-contain"
-          priority
-        />
-      </div>
-
-      <div className="mt-8 flex flex-col gap-2">
-        <Link
-          href="/login"
-          className="tap-target flex h-12 items-center justify-center rounded-xl bg-[#0D9488] text-[15px] font-semibold text-white transition-all duration-200 hover:bg-[#0F766E] active:scale-[0.98]"
-        >
-          Sign in
-        </Link>
-        <Link
-          href="/join"
-          className="tap-target flex min-h-12 items-center justify-center rounded-xl border-[1.5px] border-[#0D9488] bg-white/80 px-4 py-2 text-center text-[15px] font-semibold leading-snug text-[#0D9488] backdrop-blur transition-all duration-200 hover:bg-[#F0FDFA] active:scale-[0.98]"
-        >
-          <span>
-            New here?
-            <br />
-            Find your church or
-            <br />
-            fellowship&nbsp;→
-          </span>
-        </Link>
-      </div>
+        <Splash />
+        <FirstRunForward />
       </div>
     </div>
   );
