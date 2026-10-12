@@ -1,0 +1,107 @@
+name: web-deploy
+
+# THE web deploy pipeline. Pushes to main touching the app build, publish,
+# and verify live content — then roll back automatically if verification fails.
+# Why this exists: Netlify's own repo builder published empty output (every
+# route 404) while reporting green. Rule learned the hard way: never trust a
+# green build — only live content. Netlify-side repo builds stay paused; this
+# workflow uses the proven CLI path (local build + upload) instead.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'roe-app/app/**'
+      - 'roe-app/components/**'
+      - 'roe-app/lib/**'
+      - 'roe-app/public/**'
+      - 'roe-app/package.json'
+      - 'roe-app/package-lock.json'
+      - 'roe-app/next.config.ts'
+      - 'roe-app/netlify.toml'
+      - '.github/workflows/web-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build, deploy, verify live
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: roe-app
+        shell: bash
+    env:
+      NETLIFY_SITE_ID: 07b8a892-ab36-4b32-8b6b-b22537a91947
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: roe-app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Record current production deploy
+        id: before
+        run: |
+          ID=$(curl -s -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+            "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID" | \
+            python3 -c "import json,sys; print((json.load(sys.stdin).get('published_deploy') or {}).get('id',''))")
+          test -n "$ID" || { echo "Could not read published deploy id"; exit 1; }
+          echo "deploy_id=$ID" >> "$GITHUB_OUTPUT"
+          echo "Rollback target: $ID"
+
+      - name: Build and deploy to production
+        id: deploy
+        run: npx --yes netlify-cli@27 deploy --prod --build
+
+      - name: Verify live content (never trust green alone)
+        id: smoke
+        run: |
+          BASE="https://roe-pilot.netlify.app"
+          pass=0; fail=0
+          check() { # check <expected-code> <url> [extra curl args...]
+            local want="$1"; shift
+            local url="$1"; shift
+            local got
+            got=$(curl -s -o /dev/null -w "%{http_code}" "$@" "$url")
+            if [ "$got" = "$want" ]; then echo "OK   $want $url"; pass=$((pass+1));
+            else echo "FAIL want $want got $got :: $url"; fail=$((fail+1)); fi
+          }
+          check 200 "$BASE/"
+          check 200 "$BASE/login"
+          check 200 "$BASE/manifest.webmanifest"
+          check 200 "$BASE/sw.js"
+          check 200 "$BASE/icons/icon-192.png"
+          check 200 "$BASE/.well-known/assetlinks.json"
+          check 200 "$BASE/api/platform/me"
+          check 404 "$BASE/api/setup" -X POST -H "Content-Type: application/json" -d '{}'
+          check 401 "$BASE/api/audit"
+          # Content proof: the login page must not be a Netlify 404 shell.
+          if curl -s "$BASE/login" | grep -q "Page not found"; then
+            echo "FAIL login serves a 404 shell"; fail=$((fail+1));
+          else echo "OK   login serves app content"; pass=$((pass+1)); fi
+          echo "--- $pass passed, $fail failed ---"
+          test "$fail" -eq 0
+
+      - name: Roll back on broken publish
+        if: failure() && steps.deploy.outcome == 'success'
+        env:
+          BEFORE_ID: ${{ steps.before.outputs.deploy_id }}
+        run: |
+          echo "Smoke failed after publish — restoring $BEFORE_ID"
+          npx --yes netlify-cli@27 api restoreSiteDeploy \
+            --data "{\"site_id\":\"$NETLIFY_SITE_ID\",\"deploy_id\":\"$BEFORE_ID\"}"
+          exit 1
