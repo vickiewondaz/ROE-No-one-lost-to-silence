@@ -22,6 +22,8 @@ export interface Person {
   assignee: string;
   nextAction: string;
   lastContact?: string;
+  lastContactAt?: string | null;
+  createdAt?: string;
   group?: string;
 }
 
@@ -47,6 +49,8 @@ const SEED_PEOPLE: Person[] = [
     assignee: "You",
     nextAction: "Introduce to Young Adults",
     lastContact: "Tuesday via WhatsApp",
+    lastContactAt: "2026-09-10T10:00:00Z",
+    createdAt: "2026-08-01T10:00:00Z",
     group: "Young Adults",
   },
   {
@@ -60,6 +64,8 @@ const SEED_PEOPLE: Person[] = [
     assignee: "You",
     nextAction: "Welcome call",
     lastContact: undefined,
+    lastContactAt: null,
+    createdAt: new Date(Date.now() - 3 * 86_400_000).toISOString(),
   },
   {
     id: "david",
@@ -72,6 +78,8 @@ const SEED_PEOPLE: Person[] = [
     assignee: "Grace",
     nextAction: "Record outcome",
     lastContact: "Yesterday",
+    lastContactAt: new Date(Date.now() - 1 * 86_400_000).toISOString(),
+    createdAt: "2026-09-20T10:00:00Z",
   },
 ];
 

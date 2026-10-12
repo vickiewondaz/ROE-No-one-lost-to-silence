@@ -41,6 +41,10 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
 ## Current state (what works, proven — not claimed)
 
 - Full P0 loop live in code: capture → assign → follow-up → record → connect → next action.
+- Silent list: leader dashboards (admin/senior + group-leader) show an "N silent"
+  strip — people with no contact in 14+ days (from `interactions.date`, fallback
+  `people.created_at`; pure helper in `lib/silence.ts`, 5 unit tests). Taps through
+  to People with a `Silent` filter chip (`/people#silent`). No migration.
 - Plus: invites (hashed, single-use, 7d) + request-to-join with throttles, admin console
   (team/invites/audit/roles/leads), dark platform tier (orgs, first-admin invites, suspend),
   password change + recovery email, celebrations (milestones, upcoming, acknowledge flow),

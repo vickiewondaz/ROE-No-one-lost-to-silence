@@ -17,6 +17,7 @@ export async function personDTO(
     phone: string;
     channel: "Call" | "WhatsApp" | "Visit" | "Other";
     interests: string | null;
+    createdAt: Date | string;
   }
 ) {
   const acts = await tx
@@ -74,6 +75,10 @@ export async function personDTO(
     lastContact: inter[0]
       ? `${new Date(inter[0].date).toLocaleDateString()} via ${inter[0].channel}`
       : undefined,
+    // Raw dates for the silent list (days since last contact, 14+ = silent).
+    lastContactAt: inter[0] ? new Date(inter[0].date).toISOString() : null,
+    createdAt:
+      p.createdAt instanceof Date ? p.createdAt.toISOString() : p.createdAt,
     group: mems[0]?.name,
   };
 }

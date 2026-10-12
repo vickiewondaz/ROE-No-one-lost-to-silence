@@ -3,11 +3,37 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { VolumeX } from "lucide-react";
 import { Shell, Card, AttentionPill, StatusPill, Avatar, SectionHead, ContactButtons, JourneyStepper, memberJourneyLabel } from "@/components/ui";
 import ServicesUpcoming from "@/components/services-upcoming";
 import { CelebrateActions } from "@/components/celebrate";
 import { loadActions, type Person } from "@/lib/data";
 import { usePeople } from "@/lib/use-people";
+import { isSilent } from "@/lib/silence";
+
+// The pain, made visible: how many people have heard nothing for 14+ days.
+// Shared by the admin/senior dashboard and the group-leader view.
+function SilentStrip({ people }: { people: Person[] }) {
+  const silent = people.filter((p) => isSilent(p));
+  return (
+    <Link
+      href="/people#silent"
+      className="mb-3 flex items-center gap-3 rounded-xl bg-[#17201F] p-4 text-white"
+    >
+      <VolumeX aria-hidden className="h-8 w-8 shrink-0 text-[#5EEAD4]" />
+      <div className="min-w-0 flex-1">
+        <p className="font-display text-[26px] font-semibold leading-none">{silent.length}</p>
+        <p className="mt-1 text-[13px] text-[#A7B3B0]">
+          {silent.length === 0
+            ? "Nobody is silent. Every bond is alive."
+            : silent.length === 1
+              ? "person silent — no contact in 14+ days →"
+              : "silent — no contact in 14+ days →"}
+        </p>
+      </div>
+    </Link>
+  );
+}
 
 interface RemoteAction {
   id: string;
@@ -105,6 +131,7 @@ export default function HomePage() {
           <p className="font-mono2 text-[12px] text-[#A7B3B0]">team, invitations, audit</p>
         </Link>
       )}
+      {["admin", "senior"].includes(role) && <SilentStrip people={people} />}
 
       <SectionHead title="Needs attention" count={overdue.length + today.length + fresh.length} />
       <div className="mt-2 flex flex-col gap-2">
@@ -278,6 +305,7 @@ function LeaderHome({ people, actions, intros }: { people: Person[]; actions: Re
   const mine = actions.filter((a) => a.bucket === "today" || a.bucket === "overdue");
   return (
     <Shell title="Group leader" tab="home">
+      <SilentStrip people={people} />
       <SectionHead title="Introductions needing you" count={intros.length} />
       <div className="mt-2 flex flex-col gap-2">
         {intros.map((i) => (

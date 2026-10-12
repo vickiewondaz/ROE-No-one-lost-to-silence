@@ -5,17 +5,20 @@ import { useState } from "react";
 import { Search } from "lucide-react";
 import { Shell, Card, StatusPill, ContactButtons, inputCls } from "@/components/ui";
 import { usePeople } from "@/lib/use-people";
+import { isSilent } from "@/lib/silence";
 
-const FILTERS = ["All", "New", "Assigned", "Contacted", "Connecting", "Connected"] as const;
+const FILTERS = ["All", "Silent", "New", "Assigned", "Contacted", "Connecting", "Connected"] as const;
 
 export default function PeoplePage() {
   const [q, setQ] = useState("");
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]>(() =>
+    typeof window !== "undefined" && window.location.hash === "#silent" ? "Silent" : "All"
+  );
   const { people, demo, forbidden } = usePeople();
 
   const list = people.filter(
     (p) =>
-      (filter === "All" || p.journey === filter) &&
+      (filter === "All" || (filter === "Silent" ? isSilent(p) : p.journey === filter)) &&
       `${p.firstName} ${p.lastName}`.toLowerCase().includes(q.toLowerCase())
   );
 
