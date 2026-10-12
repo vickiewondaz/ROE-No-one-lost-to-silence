@@ -138,9 +138,13 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
 ## Deploys (no CLI tokens survive — user revokes them)
 
 - Netlify: project `roe-pilot` linked to GitHub (`main`, base `roe-app/`),
-  auto-deploy VERIFIED WORKING (owner re-authorized the GitHub App; test push
-  built green and published with the commit attached). Pushes go live by
-  themselves again — no CLI token needed.
+  BUT auto-builds publish BROKEN output (entire site 404 — green builds, empty
+  content; the repo build is not running the Next build correctly). DO NOT
+  TRUST green Netlify builds — always curl-verify live routes after. Last good
+  deploy: `6accca56` (CLI). Site restored via dashboard rollback or CLI
+  redeploy; repo builds stay suspect until the build log is read and the
+  config fixed. (This note UNPUSHED while site is down — pushing triggers
+  another broken publish.)
 - Env vars live in Netlify dashboard (DB URLs, secrets, `OMNIROUTE_*`, `ALLOW_SETUP=false`).
 - Never commit `.env.local`, `.neon`, `.netlify`, `.apk-work/`, keystores, or any secret value.
 
