@@ -6,8 +6,24 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, CheckSquare, Home, MoreHorizontal, Users } from "lucide-react";
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 
 export type TabId = "home" | "people" | "actions" | "more";
+
+// Unread assignment count for the More-tab dot. Silent when signed out.
+function useUnreadCount(): number {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    fetch("/api/notifications", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (Array.isArray(j?.data))
+          setN(j.data.filter((x: { read?: boolean }) => !x.read).length);
+      })
+      .catch(() => {});
+  }, []);
+  return n;
+}
 
 const TABS: { id: TabId; label: string; href: string; Icon: typeof Home }[] = [
   { id: "home", label: "Home", href: "/home", Icon: Home },
@@ -29,11 +45,13 @@ export function BackButton({ href }: { href: string }) {
 }
 
 export function BottomNav({ active }: { active?: TabId }) {
+  const unread = useUnreadCount();
   return (
     <nav className="fixed bottom-0 left-1/2 w-full max-w-[480px] -translate-x-1/2 border-t border-[#E5E7EB] bg-white px-2 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 lg:hidden">
       <div className="grid grid-cols-4 gap-1">
         {TABS.map(({ id, label, href, Icon }) => {
           const on = active === id;
+          const dot = id === "more" && unread > 0;
           return (
             <Link
               key={id}
@@ -43,6 +61,13 @@ export function BottomNav({ active }: { active?: TabId }) {
                 on ? "text-[#0D9488]" : "text-[#6B7280]"
               }`}
             >
+              {dot && (
+                <span
+                  aria-hidden
+                  className="absolute right-1/2 top-1 h-2 w-2 translate-x-4 rounded-full bg-[#0D9488]"
+                />
+              )}
+              {dot && <span className="sr-only">{unread} unread notifications. </span>}
               {on && (
                 <motion.span
                   layoutId="nav-pill"
@@ -62,10 +87,12 @@ export function BottomNav({ active }: { active?: TabId }) {
 }
 
 export function RailNav({ active }: { active?: TabId }) {
+  const unread = useUnreadCount();
   return (
     <div className="mt-3 flex flex-col gap-1">
       {TABS.map(({ id, label, href, Icon }) => {
         const on = active === id;
+        const dot = id === "more" && unread > 0;
         return (
           <Link
             key={id}
@@ -85,6 +112,9 @@ export function RailNav({ active }: { active?: TabId }) {
             )}
             <Icon aria-hidden className="h-5 w-5 shrink-0" />
             {label}
+            {dot && (
+              <span aria-hidden className="ml-auto h-2 w-2 shrink-0 rounded-full bg-[#0D9488]" />
+            )}
           </Link>
         );
       })}

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Shell, Card } from "@/components/ui";
 import PwaInstall from "@/components/pwa-install";
 import AppUpdate from "@/components/app-update";
+import { notificationText } from "@/lib/notify-text";
 
 const FRAMES: [string, string][] = [
   ["P01 Login", "/login"],
@@ -109,7 +110,7 @@ export default function More() {
           >
             <Card>
               <p className={`text-[14px] ${n.read ? "text-[#6B7280]" : "font-medium"}`}>
-                {n.type === "assignment" ? "New assignment for you" : n.type}
+                {notificationText(n.type)}
                 {!n.read && " ●"}
               </p>
             </Card>
