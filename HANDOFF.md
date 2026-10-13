@@ -100,10 +100,11 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
   block APK downloads; that was the only "direct link doesn't load" cause.)
 - Release `android-v1.0.4+9`: package `app.netlify.roe_pilot.twa`, versionCode 5,
   flavicon icon, same key/fingerprint as assetlinks.
-- Demo video: `ROE-demo.mp4` at repo root (NOT committed — 4MB binary;
+- Demo video: `ROE-demo.mp4` at repo root (NOT committed — 8MB binary;
   LANDSCAPE 1920x1080 cinematic concept per owner reference: dark navy panel
   + numbered section + headline, phone mockup with live app screens, shepherd
-  title/end cards; static frames + crossfades, ~3min, no voiceover). Captures rebuilt as
+  title/end cards; static frames + crossfades, ~6min, 16 scenes incl. each
+  user's login moment, no voiceover). Captures rebuilt as
   needed with headless Chromium (scripts live in /tmp/roe-video, deleted).
 - Demo accounts (Riverside Chapel sandbox org, pw `DemoPass123!`):
   amara(admin) / david+grace(workers) / funke(group_leader) / sarah(member)
