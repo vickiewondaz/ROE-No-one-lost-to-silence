@@ -106,6 +106,10 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
   title/end cards; static frames + crossfades, ~6min, 16 scenes incl. each
   user's login moment, no voiceover). Captures rebuilt as
   needed with headless Chromium (scripts live in /tmp/roe-video, deleted).
+- User journeys: `User-Journeys/` at repo root (NOT committed — 19 PNGs +
+  `JOURNEYS.md` map: every screen of all 5 roles, live Riverside data, headless
+  Chromium captures). Re-capture per role with content-aware waits (cold DB =
+  slow first fetch; never trust fixed sleeps).
 - Demo accounts (Riverside Chapel sandbox org, pw `DemoPass123!`):
   amara(admin) / david+grace(workers) / funke(group_leader) / sarah(member)
   @riverside.test. Emeka backdated 20d for the silent-strip demo. WIPE the
