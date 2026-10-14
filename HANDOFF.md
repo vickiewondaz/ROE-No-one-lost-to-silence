@@ -100,7 +100,7 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
   block APK downloads; that was the only "direct link doesn't load" cause.)
 - Release `android-v1.0.4+9`: package `app.netlify.roe_pilot.twa`, versionCode 5,
   flavicon icon, same key/fingerprint as assetlinks.
-- Demo video: `ROE-demo.mp4` at repo root (NOT committed — 8MB binary;
+- Demo video: `ROE-demo.mp4` at repo root (NOT committed — 8MB binary,
   LANDSCAPE 1920x1080 cinematic concept per owner reference: dark navy panel
   + numbered section + headline, phone mockup with live app screens, shepherd
   title/end cards; static frames + crossfades, ~6min, 16 scenes incl. each
@@ -110,6 +110,11 @@ Better Auth + Postgres (Neon), hosted on Netlify. Installable PWA + sideload APK
   amara(admin) / david+grace(workers) / funke(group_leader) / sarah(member)
   @riverside.test. Emeka backdated 20d for the silent-strip demo. WIPE the
   org after the video shoot (owner call).
+- Pitch deck: `pitch-deck/` at repo root (NOT committed — 10 PNGs, 1920x1080,
+  cinematic concept: Lagos narrative, loop diagram, journey + roles maps, UX,
+  business/pricing in NGN (indicative), proof, ask). Builder script was in
+  /tmp (wiped with the scratch dir); any rebuild means rewriting it — every
+  frame was verified one by one before delivery.
 
 ## Secrets map (names only — values live in env, never in chat/files)
 
